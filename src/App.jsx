@@ -279,7 +279,7 @@ function AuthPage({ onLoginSuccess }) {
     <div style={{ flex: 1, background: "#1a1008", display: "flex", flexDirection: "column", justifyContent: "center", padding: "60px 80px", position: "relative", overflow: "hidden" }}>
       <div style={{ position: "absolute", top: -80, right: -80, width: 320, height: 320, borderRadius: "50%", background: "radial-gradient(circle, rgba(201,136,58,0.2), transparent 70%)" }} />
       <div style={{ fontSize: 52, fontWeight: 900, color: "#c9883a", lineHeight: 1.1, fontFamily: "Georgia, serif" }}>Warangal<br />Bookies</div>
-      <div style={{ fontSize: 15, color: "rgba(255,255,255,0.5)", marginTop: 16, lineHeight: 1.9, maxWidth: 340 }}>
+      <div style={{ fontSize: 15, color: "rgba(255,255,255,0.75)", marginTop: 16, lineHeight: 1.9, maxWidth: 340 }}>
         A community of passionate readers from Warangal — sharing stories, lending books, and celebrating literature together.
       </div>
       <div style={{ marginTop: 32, display: "flex", flexDirection: "column", gap: 12 }}>
@@ -436,7 +436,7 @@ function Sidebar({ user, page, setPage, onLogout, pendingCount = 0 }) {
             <div style={{ width: 30, height: 30, borderRadius: "50%", background: "#c9883a", color: "#1a1008", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{user.avatar}</div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{user.name}</div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", textTransform: "capitalize" }}>{user.role}</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", textTransform: "capitalize" }}>{user.role}</div>
             </div>
             <button onClick={onLogout} style={{ background: "#fee2e2", border: "none", color: "#dc2626", borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "inherit" }}>Logout</button>
           </div>
@@ -450,10 +450,10 @@ function Sidebar({ user, page, setPage, onLogout, pendingCount = 0 }) {
     <div style={{ width: 240, background: "#1a1008", display: "flex", flexDirection: "column", flexShrink: 0, height: "100vh", position: "sticky", top: 0 }}>
       <div style={{ padding: "24px 18px 18px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
         <div style={{ fontFamily: "Georgia, serif", fontSize: 17, fontWeight: 900, color: "#c9883a" }}>Warangal Bookies</div>
-        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", letterSpacing: 2, textTransform: "uppercase", marginTop: 3 }}>Book Club · Warangal</div>
+        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.55)", letterSpacing: 2, textTransform: "uppercase", marginTop: 3 }}>Book Club · Warangal</div>
       </div>
       <div style={{ flex: 1, padding: "14px 10px", overflowY: "auto" }}>
-        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", letterSpacing: 2, textTransform: "uppercase", padding: "4px 10px 8px" }}>Menu</div>
+        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", letterSpacing: 2, textTransform: "uppercase", padding: "4px 10px 8px" }}>Menu</div>
         {NAV.map(n => navBtn(n.id, n.icon, n.label, n.badge || 0))}
       </div>
       <div style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: 10 }}>
@@ -525,7 +525,7 @@ function Dashboard({ user, books, meetups, loans, loanRequests, setPage, loading
               : <>
                   <div style={{ fontSize: 22, marginBottom: 6 }}>{icon}</div>
                   <div style={{ fontFamily: "Georgia, serif", fontSize: 24, fontWeight: 700, color: "#1a1008" }}>{val}</div>
-                  <div style={{ fontSize: 11, color: "#8b5e3c", textTransform: "uppercase", letterSpacing: 0.5, marginTop: 2 }}>{label}</div>
+                  <div style={{ fontSize: 12, color: "#8b5e3c", textTransform: "uppercase", letterSpacing: 0.5, marginTop: 2 }}>{label}</div>
                 </>
             }
           </div>
@@ -549,7 +549,7 @@ function Dashboard({ user, books, meetups, loans, loanRequests, setPage, loading
                     <div key={m.id} style={{ display: "flex", gap: 12, marginBottom: 14 }}>
                       <div style={{ background: "#1a1008", color: "#fff", borderRadius: 8, padding: "8px 10px", textAlign: "center", minWidth: 42, flexShrink: 0 }}>
                         <div style={{ fontFamily: "Georgia, serif", fontSize: 18, fontWeight: 700, lineHeight: 1 }}>{dt ? dt.getDate() : "?"}</div>
-                        <div style={{ fontSize: 9, opacity: 0.5, textTransform: "uppercase" }}>{dt ? dt.toLocaleString("en", { month: "short" }) : ""}</div>
+                        <div style={{ fontSize: 9, color: "rgba(255,255,255,0.7)", textTransform: "uppercase" }}>{dt ? dt.toLocaleString("en", { month: "short" }) : ""}</div>
                       </div>
                       <div>
                         <div style={{ fontWeight: 600, fontSize: 13 }}>{m.title || "Untitled"}</div>
@@ -637,7 +637,7 @@ function AboutPage({ users }) {
           </div>
         ))}
       </div>
-}</div>
+    </div>
   );
 }
 
@@ -705,9 +705,9 @@ function BooksPage({ books, users, currentUser, onRefresh, showToast, loading })
                     <div style={{ fontSize: 38, marginBottom: 10 }}>{b.cover}</div>
                     <div style={{ fontFamily: "Georgia, serif", fontSize: 15, fontWeight: 700, lineHeight: 1.3 }}>{b.title}</div>
                     <div style={{ fontSize: 13, color: "#8b5e3c", marginTop: 2 }}>by {b.author}</div>
-                    {b.genre && <div style={{ fontSize: 11, background: "#f0e8d8", color: "#8b5e3c", borderRadius: 20, padding: "2px 10px", display: "inline-block", margin: "7px 0" }}>{b.genre}</div>}
-                    <div style={{ fontSize: 13, color: "#c9883a" }}>{"★".repeat(Math.round(b.rating || 4))} <span style={{ fontSize: 12, color: "#aaa" }}>{b.rating}</span></div>
-                    <div style={{ fontSize: 11, color: "#aaa", marginTop: 4 }}>By {owner?.name || b.owner_name || "Unknown"}</div>
+                    {b.genre && <div style={{ fontSize: 12, background: "#f0e8d8", color: "#6b4423", borderRadius: 20, padding: "2px 10px", display: "inline-block", margin: "7px 0" }}>{b.genre}</div>}
+                    <div style={{ fontSize: 13, color: "#c9883a" }}>{"★".repeat(Math.round(b.rating || 4))} <span style={{ fontSize: 12, color: "#6b7280" }}>{b.rating}</span></div>
+                    <div style={{ fontSize: 12, color: "#6b7280", marginTop: 4 }}>By {owner?.name || b.owner_name || "Unknown"}</div>
                     <div style={{ marginTop: 8 }}><Badge type={b.available ? "green" : "yellow"}>{b.available ? "✓ Available" : "⏳ On Loan"}</Badge></div>
                   </div>
                 );
@@ -774,7 +774,7 @@ function MeetupsPage({ meetups, users, currentUser, onRefresh, showToast, loadin
                 <div key={m.id} style={{ background: "#fff", border: "1px solid #e8ddd0", borderRadius: 12, padding: "16px 20px", display: "flex", gap: 16, alignItems: "flex-start", marginBottom: 12 }}>
                   <div style={{ background: "#1a1008", color: "#fff", borderRadius: 10, padding: "8px 12px", textAlign: "center", minWidth: 50, flexShrink: 0 }}>
                     <div style={{ fontFamily: "Georgia, serif", fontSize: 20, fontWeight: 700, lineHeight: 1 }}>{dt ? dt.getDate() : "?"}</div>
-                    <div style={{ fontSize: 9, opacity: 0.5, textTransform: "uppercase", marginTop: 2 }}>{dt ? dt.toLocaleString("en", { month: "short" }) : ""}</div>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", marginTop: 2 }}>{dt ? dt.toLocaleString("en", { month: "short" }) : ""}</div>
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontFamily: "Georgia, serif", fontSize: 16, fontWeight: 700 }}>{m.title}</div>
@@ -782,13 +782,13 @@ function MeetupsPage({ meetups, users, currentUser, onRefresh, showToast, loadin
                       <span>🕕 {m.time}</span><span>📍 {m.venue}</span><span>📗 {m.book}</span>
                       {host?.name && <span>👤 {host.name}</span>}
                     </div>
-                    <div style={{ fontSize: 13, color: "#999", marginTop: 6 }}>{m.description}</div>
+                    <div style={{ fontSize: 13, color: "#6b7280", marginTop: 6 }}>{m.description}</div>
                     <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 10, flexWrap: "wrap" }}>
                       {(Array.isArray(m.attendees) ? m.attendees : []).map(aid => {
                         const u = users.find(x => x.id === aid);
-                        return (u && u.name) ? <div key={aid} title={u.name} style={{ width: 24, height: 24, borderRadius: "50%", background: "#f0e8d8", color: "#8b5e3c", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700 }}>{u.avatar}</div> : null;
+                        return (u && u.name) ? <div key={aid} title={u.name} style={{ width: 26, height: 26, borderRadius: "50%", background: "#f0e8d8", color: "#6b4423", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700 }}>{u.avatar}</div> : null;
                       })}
-                      <span style={{ fontSize: 12, color: "#aaa" }}>{(Array.isArray(m.attendees) ? m.attendees : []).length}/{m.max_attendees} attending</span>
+                      <span style={{ fontSize: 12, color: "#6b7280" }}>{(Array.isArray(m.attendees) ? m.attendees : []).length}/{m.max_attendees} attending</span>
                     </div>
                   </div>
                   {m.status === "upcoming" && (
@@ -818,7 +818,7 @@ function LeaderboardPage({ users, loading }) {
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16, marginBottom: 22 }}>
         <div style={{ background: "#1a1008", color: "#fff", borderRadius: 12, padding: 22 }}>
-          <div style={{ fontSize: 12, opacity: 0.5, textTransform: "uppercase", letterSpacing: 1 }}>🏆 Top Reader</div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: 1 }}>🏆 Top Reader</div>
           <div style={{ fontFamily: "Georgia, serif", fontSize: 24, fontWeight: 700, marginTop: 8 }}>{sorted[0]?.name || "—"}</div>
           <div style={{ color: "#c9883a", fontSize: 18, fontWeight: 700, marginTop: 4 }}>{sorted[0]?.points || 0} points</div>
         </div>
@@ -838,7 +838,7 @@ function LeaderboardPage({ users, loading }) {
               <thead>
                 <tr style={{ borderBottom: "2px solid #f0e8d8" }}>
                   {["Rank", "Member", "Meetups", "Books Lent", "Points", "Progress"].map(h => (
-                    <th key={h} style={{ textAlign: "left", fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#8b5e3c", padding: "10px 14px" }}>{h}</th>
+                    <th key={h} style={{ textAlign: "left", fontSize: 12, textTransform: "uppercase", letterSpacing: 1, color: "#8b5e3c", padding: "10px 14px" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -850,7 +850,7 @@ function LeaderboardPage({ users, loading }) {
                     </td>
                     <td style={{ padding: "12px 14px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#f0e8d8", color: "#8b5e3c", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>{u.avatar}</div>
+                        <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#f0e8d8", color: "#6b4423", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700 }}>{u.avatar}</div>
                         <div>
                           <div style={{ fontWeight: 600, fontSize: 13 }}>{u.name}</div>
                           {u.role === "admin" && <Badge type="gold">Admin</Badge>}
@@ -1007,8 +1007,8 @@ function BookLoansPage({ loans, loanRequests, books, users, currentUser, onRefre
                 {req.type === "request"
                   ? <div style={{ fontSize: 13, color: "#8b5e3c", marginTop: 2 }}><strong>{req.requester_name}</strong> wants to borrow this from you</div>
                   : <div style={{ fontSize: 13, color: "#8b5e3c", marginTop: 2 }}><strong>{req.owner_name}</strong> is offering to lend you this book</div>}
-                {req.message && <div style={{ fontSize: 12, color: "#999", marginTop: 4, fontStyle: "italic" }}>"{req.message}"</div>}
-                <div style={{ fontSize: 12, color: "#aaa", marginTop: 2 }}>Return by: {formatDate(req.proposed_due_date)}</div>
+                {req.message && <div style={{ fontSize: 12, color: "#6b7280", marginTop: 4, fontStyle: "italic" }}>"{req.message}"</div>}
+                <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>Return by: {formatDate(req.proposed_due_date)}</div>
               </div>
               <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
                 <Btn variant="gold" small disabled={saving} onClick={() => acceptRequest(req)}>✓ Accept</Btn>
@@ -1052,7 +1052,7 @@ function BookLoansPage({ loans, loanRequests, books, users, currentUser, onRefre
               <div style={{ flex: 1 }}>
                 <div style={{ fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 14 }}>{l.book_title}</div>
                 <div style={{ fontSize: 13, color: "#8b5e3c" }}>{l.lender_id === currentUser.id ? `📤 Lent to ${l.borrower_name}` : `📥 Borrowed from ${l.lender_name}`}</div>
-                <div style={{ fontSize: 12, color: "#aaa" }}>Lent: {formatDate(l.lent_date)} · Due: {formatDate(l.due_date)}</div>
+                <div style={{ fontSize: 12, color: "#6b7280" }}>Lent: {formatDate(l.lent_date)} · Due: {formatDate(l.due_date)}</div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
                 <Badge type={l.status === "returned" ? "green" : over ? "red" : "yellow"}>
@@ -1176,7 +1176,7 @@ function AdminPage({ books, meetups, loans, loanRequests, users, currentUser, on
           <div key={label} style={{ background: "#fff", border: "1px solid #e8ddd0", borderRadius: 12, padding: 16 }}>
             <div style={{ fontSize: 20, marginBottom: 6 }}>{icon}</div>
             <div style={{ fontFamily: "Georgia, serif", fontSize: 24, fontWeight: 700 }}>{val}</div>
-            <div style={{ fontSize: 11, color: "#8b5e3c", textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
+            <div style={{ fontSize: 12, color: "#8b5e3c", textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
           </div>
         ))}
       </div>
@@ -1191,7 +1191,7 @@ function AdminPage({ books, meetups, loans, loanRequests, users, currentUser, on
             <div key={m.id} style={{ background: "#fff", border: "1px solid #e8ddd0", borderRadius: 12, padding: "14px 18px", display: "flex", gap: 14, alignItems: "center", marginBottom: 10 }}>
               <div style={{ background: "#1a1008", color: "#fff", borderRadius: 8, padding: "7px 10px", textAlign: "center", minWidth: 44, flexShrink: 0 }}>
                 <div style={{ fontFamily: "Georgia, serif", fontSize: 17, fontWeight: 700, lineHeight: 1 }}>{new Date(m.date).getDate()}</div>
-                <div style={{ fontSize: 9, opacity: 0.5, textTransform: "uppercase" }}>{new Date(m.date).toLocaleString("en", { month: "short" })}</div>
+                <div style={{ fontSize: 9, color: "rgba(255,255,255,0.7)", textTransform: "uppercase" }}>{new Date(m.date).toLocaleString("en", { month: "short" })}</div>
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 600, fontSize: 14 }}>{m.title}</div>
@@ -1214,7 +1214,7 @@ function AdminPage({ books, meetups, loans, loanRequests, users, currentUser, on
           <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 500 }}>
             <thead><tr style={{ borderBottom: "2px solid #f0e8d8" }}>
               {["Member", "Role", "Points", "Meetups", "Books Lent"].map(h => (
-                <th key={h} style={{ textAlign: "left", fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#8b5e3c", padding: "10px 14px" }}>{h}</th>
+                <th key={h} style={{ textAlign: "left", fontSize: 12, textTransform: "uppercase", letterSpacing: 1, color: "#8b5e3c", padding: "10px 14px" }}>{h}</th>
               ))}
             </tr></thead>
             <tbody>
@@ -1222,10 +1222,10 @@ function AdminPage({ books, meetups, loans, loanRequests, users, currentUser, on
                 <tr key={u.id} style={{ borderBottom: "1px solid #faf5f0" }}>
                   <td style={{ padding: "12px 14px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <div style={{ width: 30, height: 30, borderRadius: "50%", background: "#f0e8d8", color: "#8b5e3c", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>{u.avatar}</div>
+                      <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#f0e8d8", color: "#6b4423", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700 }}>{u.avatar}</div>
                       <div>
                         <div style={{ fontWeight: 600, fontSize: 13 }}>{u.name}</div>
-                        <div style={{ fontSize: 11, color: "#aaa" }}>{u.email}</div>
+                        <div style={{ fontSize: 12, color: "#6b7280" }}>{u.email}</div>
                       </div>
                     </div>
                   </td>
@@ -1247,7 +1247,7 @@ function AdminPage({ books, meetups, loans, loanRequests, users, currentUser, on
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead><tr style={{ borderBottom: "2px solid #f0e8d8" }}>
                 {["Book", "Lender", "Borrower", "Due Date", "Status"].map(h => (
-                  <th key={h} style={{ textAlign: "left", fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#8b5e3c", padding: "10px 14px" }}>{h}</th>
+                  <th key={h} style={{ textAlign: "left", fontSize: 12, textTransform: "uppercase", letterSpacing: 1, color: "#8b5e3c", padding: "10px 14px" }}>{h}</th>
                 ))}
               </tr></thead>
               <tbody>
@@ -1258,7 +1258,7 @@ function AdminPage({ books, meetups, loans, loanRequests, users, currentUser, on
                       <td style={{ padding: "11px 14px", fontWeight: 600, fontSize: 13 }}>📗 {l.book_title}</td>
                       <td style={{ padding: "11px 14px", color: "#8b5e3c", fontSize: 13 }}>{l.lender_name}</td>
                       <td style={{ padding: "11px 14px", color: "#8b5e3c", fontSize: 13 }}>{l.borrower_name}</td>
-                      <td style={{ padding: "11px 14px", fontSize: 13 }}>{formatDate(l.due_date)}</td>
+                      <td style={{ padding: "11px 14px", color: "#6b7280", fontSize: 13 }}>{formatDate(l.due_date)}</td>
                       <td style={{ padding: "11px 14px" }}><Badge type={l.status === "returned" ? "green" : over ? "red" : "yellow"}>{l.status === "returned" ? "Returned" : over ? "Overdue" : "Active"}</Badge></td>
                     </tr>
                   );
