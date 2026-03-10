@@ -471,41 +471,63 @@ function Sidebar({ user, page, setPage, onLogout, pendingCount = 0 }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // DASHBOARD
 // ─────────────────────────────────────────────────────────────────────────────
-function Dashboard({ user, books, meetups, loans, loanRequests, setPage }) {
+function Dashboard({ user, books, meetups, loans, loanRequests, setPage, loading }) {
   if (!user) return null;
-  const safeLoans = (loans || []).filter(l => l && l.lender_id && l.borrower_id);
-  const safeMeetups = (meetups || []).filter(m => m && m.status);
-  const safeLoanRequests = (loanRequests || []).filter(r => r && r.status);
+
   const safeBooks = (books || []).filter(b => b && b.id);
-  const activeLoans = safeLoans.filter(l => (l.lender_id === user.id || l.borrower_id === user.id) && l.status === "active");
-  const pendingForMe = safeLoanRequests.filter(r => r.status === "pending" && (
-    (r.type === "request" && r.book_owner_id === user.id) ||
-    (r.type === "offer" && r.requester_id === user.id)
-  ));
+  const safeMeetups = (meetups || []).filter(m => m && m.id);
+  const safeLoans = (loans || []).filter(l => l && l.id);
+  const safeLoanReqs = (loanRequests || []).filter(r => r && r.id);
+
+  const myBooks = safeBooks.filter(b => b.owner_id === user.id);
+  const activeLoans = safeLoans.filter(l =>
+    (l.lender_id === user.id || l.borrower_id === user.id) && l.status === "active"
+  );
+  const pendingForMe = safeLoanReqs.filter(r =>
+    r.status === "pending" && (
+      (r.type === "request" && r.book_owner_id === user.id) ||
+      (r.type === "offer" && r.requester_id === user.id)
+    )
+  );
+  const upcomingMeetups = safeMeetups.filter(m => m.status === "upcoming");
+  const safeDate = d => { try { const dt = new Date(d); return isNaN(dt.getTime()) ? null : dt; } catch { return null; } };
+
+  const stats = [
+    { icon: "⭐", val: user.points || 0, label: "Points" },
+    { icon: "📅", val: user.meetups_attended || 0, label: "Meetups" },
+    { icon: "📚", val: myBooks.length, label: "Books Owned" },
+    { icon: "🔄", val: activeLoans.length, label: "Active Loans" },
+  ];
+
   return (
-    <div style={{ padding: 'clamp(14px, 4vw, 28px)' }}>
-      <div style={{ marginBottom: 24 }}>
+    <div style={{ padding: "clamp(14px, 4vw, 28px)" }}>
+      <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 13, color: "#8b5e3c" }}>Welcome back,</div>
-        <div style={{ fontFamily: "Georgia, serif", fontSize: 28, fontWeight: 700, color: "#1a1008" }}>{user.name} 👋</div>
+        <div style={{ fontFamily: "Georgia, serif", fontSize: "clamp(20px, 5vw, 28px)", fontWeight: 700, color: "#1a1008" }}>{user.name} 👋</div>
       </div>
 
       {pendingForMe.length > 0 && (
         <div onClick={() => setPage("loans")} style={{ background: "#fffbeb", border: "1.5px solid #f59e0b", borderRadius: 12, padding: "12px 18px", marginBottom: 18, display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
           <span style={{ fontSize: 22 }}>🔔</span>
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700, fontSize: 14, color: "#92400e" }}>You have {pendingForMe.length} loan request{pendingForMe.length > 1 ? "s" : ""} waiting</div>
-            <div style={{ fontSize: 12, color: "#b45309" }}>Click to review and respond</div>
+            <div style={{ fontWeight: 700, fontSize: 14, color: "#92400e" }}>{pendingForMe.length} loan request{pendingForMe.length > 1 ? "s" : ""} waiting for you</div>
+            <div style={{ fontSize: 12, color: "#b45309" }}>Tap to review and respond</div>
           </div>
           <span style={{ color: "#b45309", fontSize: 18 }}>→</span>
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 12, marginBottom: 24 }}>
-        {[["⭐", user.points, "Points"], ["📅", user.meetups_attended, "Meetups Attended"], ["📚", safeBooks.filter(b => b.owner_id === user.id).length, "Books Owned"], ["🔄", activeLoans.length, "Active Loans"]].map(([icon, val, label]) => (
-          <div key={label} style={{ background: "#fff", border: "1px solid #e8ddd0", borderRadius: 12, padding: 18 }}>
-            <div style={{ fontSize: 22, marginBottom: 8 }}>{icon}</div>
-            <div style={{ fontFamily: "Georgia, serif", fontSize: 26, fontWeight: 700, color: "#1a1008" }}>{val ?? 0}</div>
-            <div style={{ fontSize: 11, color: "#8b5e3c", textTransform: "uppercase", letterSpacing: 0.5, marginTop: 2 }}>{label}</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: 12, marginBottom: 20 }}>
+        {stats.map(({ icon, val, label }) => (
+          <div key={label} style={{ background: "#fff", border: "1px solid #e8ddd0", borderRadius: 12, padding: "16px 14px" }}>
+            {loading
+              ? <div style={{ height: 54, display: "flex", alignItems: "center", justifyContent: "center" }}><Spinner size={20} /></div>
+              : <>
+                  <div style={{ fontSize: 22, marginBottom: 6 }}>{icon}</div>
+                  <div style={{ fontFamily: "Georgia, serif", fontSize: 24, fontWeight: 700, color: "#1a1008" }}>{val}</div>
+                  <div style={{ fontSize: 11, color: "#8b5e3c", textTransform: "uppercase", letterSpacing: 0.5, marginTop: 2 }}>{label}</div>
+                </>
+            }
           </div>
         ))}
       </div>
@@ -516,38 +538,50 @@ function Dashboard({ user, books, meetups, loans, loanRequests, setPage }) {
             <div style={{ fontFamily: "Georgia, serif", fontSize: 16, fontWeight: 700 }}>Upcoming Meetups</div>
             <Btn onClick={() => setPage("meetups")} variant="outline" small>View all</Btn>
           </div>
-          {safeMeetups.filter(m => m.status === "upcoming").slice(0, 2).map(m => (
-            <div key={m.id} style={{ display: "flex", gap: 12, marginBottom: 14 }}>
-              <div style={{ background: "#1a1008", color: "#fff", borderRadius: 8, padding: "8px 10px", textAlign: "center", minWidth: 42, flexShrink: 0 }}>
-                <div style={{ fontFamily: "Georgia, serif", fontSize: 18, fontWeight: 700, lineHeight: 1 }}>{new Date(m.date).getDate()}</div>
-                <div style={{ fontSize: 9, opacity: 0.5, textTransform: "uppercase" }}>{new Date(m.date).toLocaleString("en", { month: "short" })}</div>
-              </div>
-              <div>
-                <div style={{ fontWeight: 600, fontSize: 13 }}>{m.title}</div>
-                <div style={{ fontSize: 12, color: "#8b5e3c" }}>📍 {m.venue}</div>
-                {(m.attendees || []).includes(user.id) && <Badge type="green">✓ Attending</Badge>}
-              </div>
-            </div>
-          ))}
-          {safeMeetups.filter(m => m.status === "upcoming").length === 0 && <div style={{ color: "#aaa", fontSize: 13 }}>No upcoming meetups.</div>}
+          {loading
+            ? <div style={{ display: "flex", justifyContent: "center", padding: 20 }}><Spinner /></div>
+            : upcomingMeetups.length === 0
+              ? <div style={{ color: "#aaa", fontSize: 13 }}>No upcoming meetups yet.</div>
+              : upcomingMeetups.slice(0, 2).map(m => {
+                  const dt = safeDate(m.date);
+                  const attending = Array.isArray(m.attendees) && m.attendees.includes(user.id);
+                  return (
+                    <div key={m.id} style={{ display: "flex", gap: 12, marginBottom: 14 }}>
+                      <div style={{ background: "#1a1008", color: "#fff", borderRadius: 8, padding: "8px 10px", textAlign: "center", minWidth: 42, flexShrink: 0 }}>
+                        <div style={{ fontFamily: "Georgia, serif", fontSize: 18, fontWeight: 700, lineHeight: 1 }}>{dt ? dt.getDate() : "?"}</div>
+                        <div style={{ fontSize: 9, opacity: 0.5, textTransform: "uppercase" }}>{dt ? dt.toLocaleString("en", { month: "short" }) : ""}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 13 }}>{m.title || "Untitled"}</div>
+                        <div style={{ fontSize: 12, color: "#8b5e3c" }}>📍 {m.venue || "TBD"}</div>
+                        {attending && <Badge type="green">✓ Attending</Badge>}
+                      </div>
+                    </div>
+                  );
+                })
+          }
         </div>
+
         <div style={{ background: "#fff", border: "1px solid #e8ddd0", borderRadius: 12, padding: 20 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
             <div style={{ fontFamily: "Georgia, serif", fontSize: 16, fontWeight: 700 }}>My Active Loans</div>
             <Btn onClick={() => setPage("loans")} variant="outline" small>View all</Btn>
           </div>
-          {activeLoans.length === 0
-            ? <div style={{ color: "#aaa", fontSize: 13 }}>No active loans right now.</div>
-            : activeLoans.slice(0, 3).map(l => (
-              <div key={l.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid #f5f0e8" }}>
-                <span style={{ fontSize: 20 }}>📗</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, fontSize: 13 }}>{l.book_title}</div>
-                  <div style={{ fontSize: 12, color: "#8b5e3c" }}>{l.lender_id === user.id ? `→ ${l.borrower_name || "Unknown"}` : `← ${l.lender_name || "Unknown"}`}</div>
+          {loading
+            ? <div style={{ display: "flex", justifyContent: "center", padding: 20 }}><Spinner /></div>
+            : activeLoans.length === 0
+              ? <div style={{ color: "#aaa", fontSize: 13 }}>No active loans right now.</div>
+              : activeLoans.slice(0, 3).map(l => (
+                <div key={l.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid #f5f0e8" }}>
+                  <span style={{ fontSize: 20 }}>📗</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: 13 }}>{l.book_title || "Unknown book"}</div>
+                    <div style={{ fontSize: 12, color: "#8b5e3c" }}>{l.lender_id === user.id ? `→ ${l.borrower_name || "?"}` : `← ${l.lender_name || "?"}`}</div>
+                  </div>
+                  <Badge type={isOverdue(l.due_date) ? "red" : "yellow"}>{isOverdue(l.due_date) ? "Overdue" : "Active"}</Badge>
                 </div>
-                <Badge type={isOverdue(l.due_date) ? "red" : "yellow"}>{isOverdue(l.due_date) ? "Overdue" : "Active"}</Badge>
-              </div>
-            ))}
+              ))
+          }
         </div>
       </div>
     </div>
@@ -608,7 +642,7 @@ function AboutPage({ users }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // BOOKS
 // ─────────────────────────────────────────────────────────────────────────────
-function BooksPage({ books, users, currentUser, onRefresh, showToast }) {
+function BooksPage({ books, users, currentUser, onRefresh, showToast, loading }) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [modal, setModal] = useState(false);
@@ -655,7 +689,9 @@ function BooksPage({ books, users, currentUser, onRefresh, showToast }) {
           style={{ padding: "8px 14px", border: "1.5px solid #e0d5c5", borderRadius: 8, fontSize: 14, fontFamily: "inherit", outline: "none", width: 230 }} />
         <TabBar tabs={[["all", "All Books"], ["available", "Available"], ["mine", "My Books"]]} active={filter} onChange={setFilter} />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px,1fr))", gap: 14 }}>
+      {loading
+        ? <div style={{ display: "flex", justifyContent: "center", padding: 60 }}><Spinner size={36} /></div>
+        : <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px,1fr))", gap: 14 }}>
         {filtered.map(b => {
           const owner = users.find(u => u.id === b.owner_id);
           return (
@@ -690,7 +726,7 @@ function BooksPage({ books, users, currentUser, onRefresh, showToast }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // MEETUPS
 // ─────────────────────────────────────────────────────────────────────────────
-function MeetupsPage({ meetups, users, currentUser, onRefresh, showToast }) {
+function MeetupsPage({ meetups, users, currentUser, onRefresh, showToast, loading }) {
   const [tab, setTab] = useState("upcoming");
   const [saving, setSaving] = useState(null);
   const shown = meetups.filter(m => m.status === tab);
@@ -715,10 +751,13 @@ function MeetupsPage({ meetups, users, currentUser, onRefresh, showToast }) {
         <div style={{ fontSize: 13, color: "#8b5e3c" }}>Join us for our monthly book discussions</div>
       </div>
       <TabBar tabs={[["upcoming", "📅 Upcoming"], ["past", "📜 Past Meetups"]]} active={tab} onChange={setTab} />
-      {shown.length === 0
+      {loading
+        ? <div style={{ display: "flex", justifyContent: "center", padding: 60 }}><Spinner size={36} /></div>
+        : shown.length === 0
         ? <div style={{ textAlign: "center", padding: 60, color: "#8b5e3c" }}>No {tab} meetups.</div>
         : shown.map(m => {
-          const joined = (m.attendees || []).includes(currentUser.id);
+          if (!m || !m.id) return null;
+          const joined = Array.isArray(m.attendees) && m.attendees.includes(currentUser.id);
           const host = users.find(u => u.id === m.host_id);
           return (
             <div key={m.id} style={{ background: "#fff", border: "1px solid #e8ddd0", borderRadius: 12, padding: "16px 20px", display: "flex", gap: 16, alignItems: "flex-start", marginBottom: 12 }}>
@@ -756,7 +795,7 @@ function MeetupsPage({ meetups, users, currentUser, onRefresh, showToast }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // LEADERBOARD
 // ─────────────────────────────────────────────────────────────────────────────
-function LeaderboardPage({ users }) {
+function LeaderboardPage({ users, loading }) {
   const sorted = [...users].sort((a, b) => (b.points || 0) - (a.points || 0));
   const max = sorted[0]?.points || 1;
   return (
@@ -817,6 +856,7 @@ function LeaderboardPage({ users }) {
           </tbody>
         </table>
       </div>
+      }
     </div>
   );
 }
@@ -824,7 +864,7 @@ function LeaderboardPage({ users }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // BOOK LOANS
 // ─────────────────────────────────────────────────────────────────────────────
-function BookLoansPage({ loans, loanRequests, books, users, currentUser, onRefresh, showToast }) {
+function BookLoansPage({ loans, loanRequests, books, users, currentUser, onRefresh, showToast, loading }) {
   const [tab, setTab] = useState("active");
   const [offerModal, setOfferModal] = useState(false);
   const [requestModal, setRequestModal] = useState(false);
@@ -986,7 +1026,9 @@ function BookLoansPage({ loans, loanRequests, books, users, currentUser, onRefre
 
       <TabBar tabs={[["active", `📚 Active (${activeLoans.length})`], ["overdue", `⚠️ Overdue (${overdueLoans.length})`], ["past", `✓ Past (${pastLoans.length})`]]} active={tab} onChange={setTab} />
 
-      {shown.length === 0
+      {loading
+        ? <div style={{ display: "flex", justifyContent: "center", padding: 40 }}><Spinner size={32} /></div>
+        : shown.length === 0
         ? <div style={{ textAlign: "center", padding: 50, color: "#8b5e3c", fontSize: 14 }}>No {tab} loans found.</div>
         : shown.map(l => {
           const over = isOverdue(l.due_date) && l.status === "active";
@@ -1065,7 +1107,7 @@ function BookLoansPage({ loans, loanRequests, books, users, currentUser, onRefre
 // ─────────────────────────────────────────────────────────────────────────────
 // ADMIN
 // ─────────────────────────────────────────────────────────────────────────────
-function AdminPage({ books, meetups, loans, loanRequests, users, currentUser, onRefresh, showToast }) {
+function AdminPage({ books, meetups, loans, loanRequests, users, currentUser, onRefresh, showToast, loading }) {
   const [tab, setTab] = useState("meetups");
   const [modal, setModal] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -1333,8 +1375,8 @@ export default function App() {
   const configMissing = SUPABASE_URL.includes("YOUR_PROJECT_ID");
 
   const renderPage = () => {
-      const props = { users, books, meetups, loans, loanRequests, currentUser: user, onRefresh: () => loadData(user), showToast };
-    if (page === "dashboard") return <Dashboard {...props} setPage={setPage} />;
+      const props = { users, books, meetups, loans, loanRequests, currentUser: user, onRefresh: () => loadData(user), showToast, loading };
+    if (page === "dashboard") return <Dashboard {...props} setPage={setPage} loading={loading} />;
     if (page === "about") return <AboutPage users={users} />;
     if (page === "books") return <BooksPage {...props} />;
     if (page === "meetups") return <MeetupsPage {...props} />;
