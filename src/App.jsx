@@ -1,4 +1,5 @@
 import { useState, Component } from "react";
+// To activate debug mode: open browser console and type: window.__DEBUG_MODE__ = true; then reload and log in
 
 class ErrorBoundary extends Component {
   constructor(props) { super(props); this.state = { err: null }; }
@@ -1263,6 +1264,28 @@ export default function App() {
 
   // Logged in but data still loading
   if (!dataLoaded) return <LoadingScreen message={"Welcome, " + user.name + "! Loading your book club…"} />;
+
+  // DEBUG SCREEN — shows raw Supabase data so we can see exactly what came back
+  // Remove this block once the app is working
+  if (window.__DEBUG_MODE__) return (
+    <div style={{ padding: 24, fontFamily: "monospace", fontSize: 12, background: "#1e1e1e", color: "#c9d1d9", minHeight: "100vh", overflowY: "auto" }}>
+      <div style={{ color: "#c9883a", fontSize: 18, fontWeight: 700, marginBottom: 16 }}>🔍 DEBUG — Raw Supabase Data</div>
+      <div style={{ marginBottom: 8 }}><span style={{ color: "#79c0ff" }}>Logged-in user:</span></div>
+      <pre style={{ background: "#161b22", padding: 12, borderRadius: 8, marginBottom: 16, overflowX: "auto" }}>{JSON.stringify(user, null, 2)}</pre>
+      <div style={{ marginBottom: 8 }}><span style={{ color: "#79c0ff" }}>users ({users.length}):</span></div>
+      <pre style={{ background: "#161b22", padding: 12, borderRadius: 8, marginBottom: 16, overflowX: "auto" }}>{JSON.stringify(users.slice(0,2), null, 2)}</pre>
+      <div style={{ marginBottom: 8 }}><span style={{ color: "#79c0ff" }}>books ({books.length}):</span></div>
+      <pre style={{ background: "#161b22", padding: 12, borderRadius: 8, marginBottom: 16, overflowX: "auto" }}>{JSON.stringify(books.slice(0,1), null, 2)}</pre>
+      <div style={{ marginBottom: 8 }}><span style={{ color: "#79c0ff" }}>meetups ({meetups.length}):</span></div>
+      <pre style={{ background: "#161b22", padding: 12, borderRadius: 8, marginBottom: 16, overflowX: "auto" }}>{JSON.stringify(meetups.slice(0,1), null, 2)}</pre>
+      <div style={{ marginBottom: 8 }}><span style={{ color: "#79c0ff" }}>loans ({loans.length}):</span></div>
+      <pre style={{ background: "#161b22", padding: 12, borderRadius: 8, marginBottom: 16, overflowX: "auto" }}>{JSON.stringify(loans.slice(0,1), null, 2)}</pre>
+      <button onClick={() => { window.__DEBUG_MODE__ = false; window.location.reload(); }}
+        style={{ padding: "10px 20px", background: "#c9883a", color: "#1a1008", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 14, fontWeight: 700 }}>
+        Exit Debug Mode
+      </button>
+    </div>
+  );
 
   const myPending = loanRequests.filter(r => r.status === "pending" && (
     (r.type === "request" && r.book_owner_id === user.id) ||
