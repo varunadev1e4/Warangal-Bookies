@@ -649,9 +649,10 @@ function BooksPage({ books, users, currentUser, onRefresh, showToast, loading })
   const [form, setForm] = useState({ title: "", author: "", genre: "", rating: "4.0" });
   const [saving, setSaving] = useState(false);
 
-  const filtered = books.filter(b => {
+  const filtered = (books || []).filter(b => {
+    if (!b) return false;
     const q = search.toLowerCase();
-    const ok = b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q);
+    const ok = (b.title || "").toLowerCase().includes(q) || (b.author || "").toLowerCase().includes(q);
     if (filter === "mine") return ok && b.owner_id === currentUser.id;
     if (filter === "available") return ok && b.available;
     return ok;
@@ -676,7 +677,7 @@ function BooksPage({ books, users, currentUser, onRefresh, showToast, loading })
   }
 
   return (
-    <div style={{ padding: 'clamp(14px, 4vw, 28px)' }}>
+    <div style={{ padding: "clamp(14px, 4vw, 28px)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
         <div>
           <div style={{ fontFamily: "Georgia, serif", fontSize: 26, fontWeight: 700, color: "#1a1008" }}>Book Library</div>
@@ -689,24 +690,29 @@ function BooksPage({ books, users, currentUser, onRefresh, showToast, loading })
           style={{ padding: "8px 14px", border: "1.5px solid #e0d5c5", borderRadius: 8, fontSize: 14, fontFamily: "inherit", outline: "none", width: 230 }} />
         <TabBar tabs={[["all", "All Books"], ["available", "Available"], ["mine", "My Books"]]} active={filter} onChange={setFilter} />
       </div>
+
       {loading
         ? <div style={{ display: "flex", justifyContent: "center", padding: 60 }}><Spinner size={36} /></div>
-        : <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px,1fr))", gap: 14 }}>
-        {filtered.map(b => {
-          const owner = users.find(u => u.id === b.owner_id);
-          return (
-            <div key={b.id} style={{ background: "#fff", border: "1px solid #e8ddd0", borderRadius: 12, padding: 18 }}>
-              <div style={{ fontSize: 38, marginBottom: 10 }}>{b.cover}</div>
-              <div style={{ fontFamily: "Georgia, serif", fontSize: 15, fontWeight: 700, lineHeight: 1.3 }}>{b.title}</div>
-              <div style={{ fontSize: 13, color: "#8b5e3c", marginTop: 2 }}>by {b.author}</div>
-              {b.genre && <div style={{ fontSize: 11, background: "#f0e8d8", color: "#8b5e3c", borderRadius: 20, padding: "2px 10px", display: "inline-block", margin: "7px 0" }}>{b.genre}</div>}
-              <div style={{ fontSize: 13, color: "#c9883a" }}>{"★".repeat(Math.round(b.rating || 4))} <span style={{ fontSize: 12, color: "#aaa" }}>{b.rating}</span></div>
-              <div style={{ fontSize: 11, color: "#aaa", marginTop: 4 }}>By {owner?.name || b.owner_name || "Unknown"}</div>
-              <div style={{ marginTop: 8 }}><Badge type={b.available ? "green" : "yellow"}>{b.available ? "✓ Available" : "⏳ On Loan"}</Badge></div>
+        : filtered.length === 0
+          ? <div style={{ textAlign: "center", padding: 60, color: "#aaa", fontSize: 14 }}>No books found.</div>
+          : <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px,1fr))", gap: 14 }}>
+              {filtered.map(b => {
+                const owner = users.find(u => u.id === b.owner_id);
+                return (
+                  <div key={b.id} style={{ background: "#fff", border: "1px solid #e8ddd0", borderRadius: 12, padding: 18 }}>
+                    <div style={{ fontSize: 38, marginBottom: 10 }}>{b.cover}</div>
+                    <div style={{ fontFamily: "Georgia, serif", fontSize: 15, fontWeight: 700, lineHeight: 1.3 }}>{b.title}</div>
+                    <div style={{ fontSize: 13, color: "#8b5e3c", marginTop: 2 }}>by {b.author}</div>
+                    {b.genre && <div style={{ fontSize: 11, background: "#f0e8d8", color: "#8b5e3c", borderRadius: 20, padding: "2px 10px", display: "inline-block", margin: "7px 0" }}>{b.genre}</div>}
+                    <div style={{ fontSize: 13, color: "#c9883a" }}>{"★".repeat(Math.round(b.rating || 4))} <span style={{ fontSize: 12, color: "#aaa" }}>{b.rating}</span></div>
+                    <div style={{ fontSize: 11, color: "#aaa", marginTop: 4 }}>By {owner?.name || b.owner_name || "Unknown"}</div>
+                    <div style={{ marginTop: 8 }}><Badge type={b.available ? "green" : "yellow"}>{b.available ? "✓ Available" : "⏳ On Loan"}</Badge></div>
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
-      </div>
+      }
+
       {modal && (
         <Modal title="Add a Book" onClose={() => setModal(false)}>
           <Field label="Book Title"><input style={iStyle} value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></Field>
@@ -723,16 +729,17 @@ function BooksPage({ books, users, currentUser, onRefresh, showToast, loading })
   );
 }
 
+
 // ─────────────────────────────────────────────────────────────────────────────
 // MEETUPS
 // ─────────────────────────────────────────────────────────────────────────────
 function MeetupsPage({ meetups, users, currentUser, onRefresh, showToast, loading }) {
   const [tab, setTab] = useState("upcoming");
   const [saving, setSaving] = useState(null);
-  const shown = meetups.filter(m => m.status === tab);
+  const shown = (meetups || []).filter(m => m && m.status === tab);
 
   async function toggleRSVP(m) {
-    const attendees = m.attendees || [];
+    const attendees = Array.isArray(m.attendees) ? m.attendees : [];
     const joined = attendees.includes(currentUser.id);
     const updated = joined ? attendees.filter(a => a !== currentUser.id) : [...attendees, currentUser.id];
     setSaving(m.id);
@@ -745,7 +752,7 @@ function MeetupsPage({ meetups, users, currentUser, onRefresh, showToast, loadin
   }
 
   return (
-    <div style={{ padding: 'clamp(14px, 4vw, 28px)' }}>
+    <div style={{ padding: "clamp(14px, 4vw, 28px)" }}>
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontFamily: "Georgia, serif", fontSize: 26, fontWeight: 700, color: "#1a1008" }}>Meetups</div>
         <div style={{ fontSize: 13, color: "#8b5e3c" }}>Join us for our monthly book discussions</div>
@@ -754,40 +761,43 @@ function MeetupsPage({ meetups, users, currentUser, onRefresh, showToast, loadin
       {loading
         ? <div style={{ display: "flex", justifyContent: "center", padding: 60 }}><Spinner size={36} /></div>
         : shown.length === 0
-        ? <div style={{ textAlign: "center", padding: 60, color: "#8b5e3c" }}>No {tab} meetups.</div>
-        : shown.map(m => {
-          if (!m || !m.id) return null;
-          const joined = Array.isArray(m.attendees) && m.attendees.includes(currentUser.id);
-          const host = users.find(u => u.id === m.host_id);
-          return (
-            <div key={m.id} style={{ background: "#fff", border: "1px solid #e8ddd0", borderRadius: 12, padding: "16px 20px", display: "flex", gap: 16, alignItems: "flex-start", marginBottom: 12 }}>
-              <div style={{ background: "#1a1008", color: "#fff", borderRadius: 10, padding: "8px 12px", textAlign: "center", minWidth: 50, flexShrink: 0 }}>
-                <div style={{ fontFamily: "Georgia, serif", fontSize: 20, fontWeight: 700, lineHeight: 1 }}>{new Date(m.date).getDate()}</div>
-                <div style={{ fontSize: 9, opacity: 0.5, textTransform: "uppercase", marginTop: 2 }}>{new Date(m.date).toLocaleString("en", { month: "short" })}</div>
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: "Georgia, serif", fontSize: 16, fontWeight: 700 }}>{m.title}</div>
-                <div style={{ fontSize: 13, color: "#8b5e3c", marginTop: 4, display: "flex", flexWrap: "wrap", gap: 10 }}>
-                  <span>🕕 {m.time}</span><span>📍 {m.venue}</span><span>📗 {m.book}</span>
-                  {host?.name && <span>👤 {host.name}</span>}
+          ? <div style={{ textAlign: "center", padding: 60, color: "#8b5e3c" }}>No {tab} meetups.</div>
+          : shown.map(m => {
+              if (!m || !m.id) return null;
+              const joined = Array.isArray(m.attendees) && m.attendees.includes(currentUser.id);
+              const host = users.find(u => u.id === m.host_id);
+              const safeDate = d => { try { const dt = new Date(d); return isNaN(dt.getTime()) ? null : dt; } catch { return null; } };
+              const dt = safeDate(m.date);
+              return (
+                <div key={m.id} style={{ background: "#fff", border: "1px solid #e8ddd0", borderRadius: 12, padding: "16px 20px", display: "flex", gap: 16, alignItems: "flex-start", marginBottom: 12 }}>
+                  <div style={{ background: "#1a1008", color: "#fff", borderRadius: 10, padding: "8px 12px", textAlign: "center", minWidth: 50, flexShrink: 0 }}>
+                    <div style={{ fontFamily: "Georgia, serif", fontSize: 20, fontWeight: 700, lineHeight: 1 }}>{dt ? dt.getDate() : "?"}</div>
+                    <div style={{ fontSize: 9, opacity: 0.5, textTransform: "uppercase", marginTop: 2 }}>{dt ? dt.toLocaleString("en", { month: "short" }) : ""}</div>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontFamily: "Georgia, serif", fontSize: 16, fontWeight: 700 }}>{m.title}</div>
+                    <div style={{ fontSize: 13, color: "#8b5e3c", marginTop: 4, display: "flex", flexWrap: "wrap", gap: 10 }}>
+                      <span>🕕 {m.time}</span><span>📍 {m.venue}</span><span>📗 {m.book}</span>
+                      {host?.name && <span>👤 {host.name}</span>}
+                    </div>
+                    <div style={{ fontSize: 13, color: "#999", marginTop: 6 }}>{m.description}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 10, flexWrap: "wrap" }}>
+                      {(Array.isArray(m.attendees) ? m.attendees : []).map(aid => {
+                        const u = users.find(x => x.id === aid);
+                        return (u && u.name) ? <div key={aid} title={u.name} style={{ width: 24, height: 24, borderRadius: "50%", background: "#f0e8d8", color: "#8b5e3c", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700 }}>{u.avatar}</div> : null;
+                      })}
+                      <span style={{ fontSize: 12, color: "#aaa" }}>{(Array.isArray(m.attendees) ? m.attendees : []).length}/{m.max_attendees} attending</span>
+                    </div>
+                  </div>
+                  {m.status === "upcoming" && (
+                    <Btn onClick={() => toggleRSVP(m)} variant={joined ? "outline" : "primary"} small disabled={saving === m.id} style={{ flexShrink: 0 }}>
+                      {saving === m.id ? "…" : joined ? "✓ Joined" : "RSVP"}
+                    </Btn>
+                  )}
                 </div>
-                <div style={{ fontSize: 13, color: "#999", marginTop: 6 }}>{m.description}</div>
-                <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 10, flexWrap: "wrap" }}>
-                  {(m.attendees || []).map(aid => {
-                    const u = users.find(x => x.id === aid);
-                    return (u && u.name) ? <div key={aid} title={u.name} style={{ width: 24, height: 24, borderRadius: "50%", background: "#f0e8d8", color: "#8b5e3c", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700 }}>{u.avatar}</div> : null;
-                  })}
-                  <span style={{ fontSize: 12, color: "#aaa" }}>{(m.attendees || []).length}/{m.max_attendees} attending</span>
-                </div>
-              </div>
-              {m.status === "upcoming" && (
-                <Btn onClick={() => toggleRSVP(m)} variant={joined ? "outline" : "primary"} small disabled={saving === m.id} style={{ flexShrink: 0 }}>
-                  {saving === m.id ? "…" : joined ? "✓ Joined" : "RSVP"}
-                </Btn>
-              )}
-            </div>
-          );
-        })}
+              );
+            })
+      }
     </div>
   );
 }
@@ -796,10 +806,10 @@ function MeetupsPage({ meetups, users, currentUser, onRefresh, showToast, loadin
 // LEADERBOARD
 // ─────────────────────────────────────────────────────────────────────────────
 function LeaderboardPage({ users, loading }) {
-  const sorted = [...users].sort((a, b) => (b.points || 0) - (a.points || 0));
+  const sorted = [...(users || [])].sort((a, b) => (b.points || 0) - (a.points || 0));
   const max = sorted[0]?.points || 1;
   return (
-    <div style={{ padding: 'clamp(14px, 4vw, 28px)' }}>
+    <div style={{ padding: "clamp(14px, 4vw, 28px)" }}>
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontFamily: "Georgia, serif", fontSize: 26, fontWeight: 700, color: "#1a1008" }}>Leaderboard</div>
         <div style={{ fontSize: 13, color: "#8b5e3c" }}>Earn points by attending meetups and lending books</div>
@@ -807,7 +817,7 @@ function LeaderboardPage({ users, loading }) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16, marginBottom: 22 }}>
         <div style={{ background: "#1a1008", color: "#fff", borderRadius: 12, padding: 22 }}>
           <div style={{ fontSize: 12, opacity: 0.5, textTransform: "uppercase", letterSpacing: 1 }}>🏆 Top Reader</div>
-          <div style={{ fontFamily: "Georgia, serif", fontSize: 24, fontWeight: 700, marginTop: 8 }}>{sorted[0]?.name}</div>
+          <div style={{ fontFamily: "Georgia, serif", fontSize: 24, fontWeight: 700, marginTop: 8 }}>{sorted[0]?.name || "—"}</div>
           <div style={{ color: "#c9883a", fontSize: 18, fontWeight: 700, marginTop: 4 }}>{sorted[0]?.points || 0} points</div>
         </div>
         <div style={{ background: "#fff", border: "1px solid #e8ddd0", borderRadius: 12, padding: 22 }}>
@@ -819,43 +829,45 @@ function LeaderboardPage({ users, loading }) {
           ))}
         </div>
       </div>
-      <div style={{ background: "#fff", border: "1px solid #e8ddd0", borderRadius: 12, overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ borderBottom: "2px solid #f0e8d8" }}>
-              {["Rank", "Member", "Meetups", "Books Lent", "Points", "Progress"].map(h => (
-                <th key={h} style={{ textAlign: "left", fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#8b5e3c", padding: "10px 14px" }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.map((u, i) => (
-              <tr key={u.id} style={{ borderBottom: "1px solid #faf5f0" }}>
-                <td style={{ padding: "12px 14px", fontFamily: "Georgia, serif", fontSize: 18, fontWeight: 700, color: i < 3 ? "#c9883a" : "#aaa" }}>
-                  {["🥇", "🥈", "🥉"][i] || `#${i + 1}`}
-                </td>
-                <td style={{ padding: "12px 14px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#f0e8d8", color: "#8b5e3c", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>{u.avatar}</div>
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: 13 }}>{u.name}</div>
-                      {u.role === "admin" && <Badge type="gold">Admin</Badge>}
-                    </div>
-                  </div>
-                </td>
-                <td style={{ padding: "12px 14px", color: "#8b5e3c", fontSize: 13 }}>{u.meetups_attended || 0}</td>
-                <td style={{ padding: "12px 14px", color: "#8b5e3c", fontSize: 13 }}>{u.books_lent || 0}</td>
-                <td style={{ padding: "12px 14px" }}><span style={{ fontFamily: "Georgia, serif", fontSize: 18, fontWeight: 700, color: "#c9883a" }}>{u.points || 0}</span></td>
-                <td style={{ padding: "12px 14px" }}>
-                  <div style={{ width: 90, height: 6, background: "#f0e8d8", borderRadius: 3 }}>
-                    <div style={{ width: `${((u.points || 0) / max) * 100}%`, height: 6, background: "#c9883a", borderRadius: 3 }} />
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {loading
+        ? <div style={{ display: "flex", justifyContent: "center", padding: 40 }}><Spinner size={36} /></div>
+        : <div style={{ background: "#fff", border: "1px solid #e8ddd0", borderRadius: 12, overflow: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 500 }}>
+              <thead>
+                <tr style={{ borderBottom: "2px solid #f0e8d8" }}>
+                  {["Rank", "Member", "Meetups", "Books Lent", "Points", "Progress"].map(h => (
+                    <th key={h} style={{ textAlign: "left", fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#8b5e3c", padding: "10px 14px" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {sorted.map((u, i) => (
+                  <tr key={u.id} style={{ borderBottom: "1px solid #faf5f0" }}>
+                    <td style={{ padding: "12px 14px", fontFamily: "Georgia, serif", fontSize: 18, fontWeight: 700, color: i < 3 ? "#c9883a" : "#aaa" }}>
+                      {["🥇", "🥈", "🥉"][i] || `#${i + 1}`}
+                    </td>
+                    <td style={{ padding: "12px 14px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#f0e8d8", color: "#8b5e3c", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>{u.avatar}</div>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: 13 }}>{u.name}</div>
+                          {u.role === "admin" && <Badge type="gold">Admin</Badge>}
+                        </div>
+                      </div>
+                    </td>
+                    <td style={{ padding: "12px 14px", color: "#8b5e3c", fontSize: 13 }}>{u.meetups_attended || 0}</td>
+                    <td style={{ padding: "12px 14px", color: "#8b5e3c", fontSize: 13 }}>{u.books_lent || 0}</td>
+                    <td style={{ padding: "12px 14px" }}><span style={{ fontFamily: "Georgia, serif", fontSize: 18, fontWeight: 700, color: "#c9883a" }}>{u.points || 0}</span></td>
+                    <td style={{ padding: "12px 14px" }}>
+                      <div style={{ width: 90, height: 6, background: "#f0e8d8", borderRadius: 3 }}>
+                        <div style={{ width: `${((u.points || 0) / max) * 100}%`, height: 6, background: "#c9883a", borderRadius: 3 }} />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
       }
     </div>
   );
