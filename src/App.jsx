@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState } from "react";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SUPABASE CONFIG — replace these two values after you create your project
@@ -1196,14 +1196,11 @@ export default function App() {
     setTimeout(() => setToast(null), 3000);
   }
 
-  // Use a ref so loadData always sees the latest user without stale closure
-  const userRef = useRef(user);
-  useEffect(() => { userRef.current = user; }, [user]);
-
-  const loadData = useCallback(async () => {
-    const currentUser = userRef.current;
-    if (!currentUser) return;
+  // loadData accepts the user explicitly to avoid any stale closure issues
+  async function loadData(loggedInUser) {
+    if (!loggedInUser) return;
     setLoading(true);
+    setDataLoaded(false);
     try {
       const [u, b, m, l, lr] = await Promise.all([
         sb.select("users", "?order=points.desc"),
@@ -1214,31 +1211,23 @@ export default function App() {
       ]);
       setUsers(u || []); setBooks(b || []); setMeetups(m || []);
       setLoans(l || []); setLoanRequests(lr || []);
-      setDataLoaded(true);
     } catch (e) {
       showToast("Could not load data: " + e.message, "error");
-      setDataLoaded(true); // still show the app, just with empty data
-    } finally { setLoading(false); }
-  }, []); // no dependencies — uses ref internally
-
-  // Trigger load whenever user changes (login/logout)
-  useEffect(() => {
-    if (user) {
-      setDataLoaded(false);
-      loadData();
-    } else {
-      // Reset all data on logout
-      setUsers([]); setBooks([]); setMeetups([]);
-      setLoans([]); setLoanRequests([]);
-      setDataLoaded(false);
+    } finally {
+      setLoading(false);
+      setDataLoaded(true);
     }
-  }, [user, loadData]);
+  }
 
   // Not logged in
   if (!user) return <AuthPage onLoginSuccess={u => {
-    if (!u || !u.id || !u.name) return;
+    if (!u || !u.id || !u.name) {
+      alert("Login failed — user profile not found. Please try again.");
+      return;
+    }
     setUser(u);
     setPage("dashboard");
+    loadData(u); // pass user directly, no stale closure possible
   }} />;
 
   // Logged in but data still loading
@@ -1253,7 +1242,7 @@ export default function App() {
   const configMissing = SUPABASE_URL.includes("YOUR_PROJECT_ID");
 
   const renderPage = () => {
-    const props = { users, books, meetups, loans, loanRequests, currentUser: user, onRefresh: loadData, showToast };
+    const props = { users, books, meetups, loans, loanRequests, currentUser: user, onRefresh: () => loadData(user), showToast };
     if (page === "dashboard") return <Dashboard {...props} setPage={setPage} />;
     if (page === "about") return <AboutPage users={users} />;
     if (page === "books") return <BooksPage {...props} />;
