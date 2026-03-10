@@ -1,5 +1,4 @@
 import { useState, Component } from "react";
-// To activate debug mode: open browser console and type: window.__DEBUG_MODE__ = true; then reload and log in
 
 class ErrorBoundary extends Component {
   constructor(props) { super(props); this.state = { err: null }; }
@@ -37,6 +36,8 @@ class ErrorBoundary extends Component {
 // ─────────────────────────────────────────────────────────────────────────────
 const SUPABASE_URL = "https://aycyyddqyytaenwnksaa.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_gZNhwY9KteONQi-m6h4Edw_fnISCGn-";
+//const SUPABASE_URL = "https://aycyyddqyytaenwnksaa.supabase.co";
+//const SUPABASE_ANON_KEY = "sb_publishable_gZNhwY9KteONQi-m6h4Edw_fnISCGn-";
 
 // ── Tiny Supabase client (no npm package needed) ──────────────────────────
 const sb = {
@@ -1270,35 +1271,7 @@ export default function App() {
   // Logged in but data still loading
   if (!dataLoaded) return <LoadingScreen message={"Welcome, " + user.name + "! Loading your book club…"} />;
 
-  // Log the full user object so we can see exactly what fields Supabase returned
-  console.log("APP RENDER — user object:", JSON.stringify(user));
-  console.log("APP RENDER — users[0]:", JSON.stringify(users[0]));
-  console.log("APP RENDER — books[0]:", JSON.stringify(books[0]));
-  console.log("APP RENDER — meetups[0]:", JSON.stringify(meetups[0]));
-  console.log("APP RENDER — loanRequests:", JSON.stringify(loanRequests));
-  console.log("APP RENDER — loans:", JSON.stringify(loans));
 
-  // DEBUG SCREEN — shows raw Supabase data so we can see exactly what came back
-  // Remove this block once the app is working
-  if (window.__DEBUG_MODE__) return (
-    <div style={{ padding: 24, fontFamily: "monospace", fontSize: 12, background: "#1e1e1e", color: "#c9d1d9", minHeight: "100vh", overflowY: "auto" }}>
-      <div style={{ color: "#c9883a", fontSize: 18, fontWeight: 700, marginBottom: 16 }}>🔍 DEBUG — Raw Supabase Data</div>
-      <div style={{ marginBottom: 8 }}><span style={{ color: "#79c0ff" }}>Logged-in user:</span></div>
-      <pre style={{ background: "#161b22", padding: 12, borderRadius: 8, marginBottom: 16, overflowX: "auto" }}>{JSON.stringify(user, null, 2)}</pre>
-      <div style={{ marginBottom: 8 }}><span style={{ color: "#79c0ff" }}>users ({users.length}):</span></div>
-      <pre style={{ background: "#161b22", padding: 12, borderRadius: 8, marginBottom: 16, overflowX: "auto" }}>{JSON.stringify(users.slice(0,2), null, 2)}</pre>
-      <div style={{ marginBottom: 8 }}><span style={{ color: "#79c0ff" }}>books ({books.length}):</span></div>
-      <pre style={{ background: "#161b22", padding: 12, borderRadius: 8, marginBottom: 16, overflowX: "auto" }}>{JSON.stringify(books.slice(0,1), null, 2)}</pre>
-      <div style={{ marginBottom: 8 }}><span style={{ color: "#79c0ff" }}>meetups ({meetups.length}):</span></div>
-      <pre style={{ background: "#161b22", padding: 12, borderRadius: 8, marginBottom: 16, overflowX: "auto" }}>{JSON.stringify(meetups.slice(0,1), null, 2)}</pre>
-      <div style={{ marginBottom: 8 }}><span style={{ color: "#79c0ff" }}>loans ({loans.length}):</span></div>
-      <pre style={{ background: "#161b22", padding: 12, borderRadius: 8, marginBottom: 16, overflowX: "auto" }}>{JSON.stringify(loans.slice(0,1), null, 2)}</pre>
-      <button onClick={() => { window.__DEBUG_MODE__ = false; window.location.reload(); }}
-        style={{ padding: "10px 20px", background: "#c9883a", color: "#1a1008", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 14, fontWeight: 700 }}>
-        Exit Debug Mode
-      </button>
-    </div>
-  );
 
   const myPending = loanRequests.filter(r => r.status === "pending" && (
     (r.type === "request" && r.book_owner_id === user.id) ||
@@ -1309,8 +1282,7 @@ export default function App() {
   const configMissing = SUPABASE_URL.includes("YOUR_PROJECT_ID");
 
   const renderPage = () => {
-    console.log("renderPage called, page=", page, "users=", users.length, "books=", books.length, "user=", user);
-    const props = { users, books, meetups, loans, loanRequests, currentUser: user, onRefresh: () => loadData(user), showToast };
+      const props = { users, books, meetups, loans, loanRequests, currentUser: user, onRefresh: () => loadData(user), showToast };
     if (page === "dashboard") return <Dashboard {...props} setPage={setPage} />;
     if (page === "about") return <AboutPage users={users} />;
     if (page === "books") return <BooksPage {...props} />;
