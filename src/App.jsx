@@ -23,12 +23,15 @@ const sb = {
   },
   async insert(table, data) {
     const r = await fetch(this.url(table), {
-      method: "POST", headers: this.headers,
+      method: "POST", headers: { ...this.headers, "Prefer": "return=representation" },
       body: JSON.stringify(Array.isArray(data) ? data : [data]),
     });
     if (!r.ok) throw new Error(await r.text());
-    const json = await r.json();
-    return Array.isArray(data) ? json : json[0];
+    // Supabase may return 204 No Content — handle gracefully
+    const text = await r.text();
+    if (!text || text === "null") return null;
+    const json = JSON.parse(text);
+    return Array.isArray(data) ? json : (json[0] ?? null);
   },
   async update(table, match, data) {
     const query = "?" + Object.entries(match).map(([k, v]) => `${k}=eq.${v}`).join("&");
@@ -206,9 +209,10 @@ function AuthPage({ onLoginSuccess }) {
       if (existing.length) { setSignupError("An account with this email already exists."); setSignupLoading(false); return; }
 
       const role = signupCode.trim() === ADMIN_INVITE_CODE ? "admin" : "member";
-      const newUser = await sb.insert("users", {
+      const emailKey = signupEmail.trim().toLowerCase();
+      await sb.insert("users", {
         name: signupName.trim(),
-        email: signupEmail.trim().toLowerCase(),
+        email: emailKey,
         password: signupPassword,
         role,
         avatar: makeAvatar(signupName),
@@ -216,6 +220,10 @@ function AuthPage({ onLoginSuccess }) {
         books_lent: 0,
         meetups_attended: 0,
       });
+      // Re-fetch to guarantee we have the full row with DB-assigned id
+      const rows2 = await sb.select("users", "?email=eq." + encodeURIComponent(emailKey));
+      const newUser = rows2[0];
+      if (!newUser) throw new Error("Account created but could not load profile. Please try logging in.");
       setSignupRole(role);
       setSignupSuccess(true);
       setTimeout(() => onLoginSuccess(newUser), 1800);
@@ -1197,13 +1205,15 @@ export default function App() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  const myPending = loanRequests.filter(r => r.status === "pending" && (
-    (r.type === "request" && r.book_owner_id === user?.id) ||
-    (r.type === "offer" && r.requester_id === user?.id)
-  ));
-
-  if (!user) return <AuthPage onLoginSuccess={u => { setUser(u); setPage("dashboard"); }} />;
+  if (!user) return <AuthPage onLoginSuccess={u => { if (!u || !u.id) return; setUser(u); setPage("dashboard"); }} />;
   if (loading && users.length === 0) return <LoadingScreen message="Loading your book club…" />;
+  // Safety guard — should never happen but prevents crash if user object is malformed
+  if (!user.name) return <LoadingScreen message="Setting up your profile…" />;
+
+  const myPending = loanRequests.filter(r => r.status === "pending" && (
+    (r.type === "request" && r.book_owner_id === user.id) ||
+    (r.type === "offer" && r.requester_id === user.id)
+  ));
 
   // Config not set yet — show a helpful banner instead of crashing
   const configMissing = SUPABASE_URL.includes("YOUR_PROJECT_ID");
