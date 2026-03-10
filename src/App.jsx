@@ -1,4 +1,4 @@
-import { useState, Component } from "react";
+import { useState, useEffect, Component } from "react";
 
 class ErrorBoundary extends Component {
   constructor(props) { super(props); this.state = { err: null }; }
@@ -276,7 +276,7 @@ function AuthPage({ onLoginSuccess }) {
   }
 
   const leftPanel = (
-    <div style={{ flex: 1, background: "#1a1008", display: "flex", flexDirection: "column", justifyContent: "center", padding: "60px 80px", position: "relative", overflow: "hidden" }}>
+    <div style={{ flex: 1, background: "#1a1008", display: window.innerWidth < 640 ? "none" : "flex", display: "flex", flexDirection: "column", justifyContent: "center", padding: "60px 80px", position: "relative", overflow: "hidden" }}>
       <div style={{ position: "absolute", top: -80, right: -80, width: 320, height: 320, borderRadius: "50%", background: "radial-gradient(circle, rgba(201,136,58,0.2), transparent 70%)" }} />
       <div style={{ fontSize: 52, fontWeight: 900, color: "#c9883a", lineHeight: 1.1, fontFamily: "Georgia, serif" }}>Warangal<br />Bookies</div>
       <div style={{ fontSize: 15, color: "rgba(255,255,255,0.5)", marginTop: 16, lineHeight: 1.9, maxWidth: 340 }}>
@@ -309,7 +309,7 @@ function AuthPage({ onLoginSuccess }) {
   return (
     <div style={{ minHeight: "100vh", display: "flex", fontFamily: "sans-serif" }}>
       {leftPanel}
-      <div style={{ width: 440, background: "#faf6ef", display: "flex", flexDirection: "column", justifyContent: "center", padding: "40px 48px", overflowY: "auto" }}>
+      <div style={{ width: "min(440px, 100vw)", background: "#faf6ef", display: "flex", flexDirection: "column", justifyContent: "center", padding: "40px clamp(20px, 6vw, 48px)", overflowY: "auto" }}>
         <div style={{ display: "flex", background: "#f0e8d8", borderRadius: 10, padding: 4, marginBottom: 24 }}>
           {[["login", "Sign In"], ["signup", "Create Account"]].map(([m, label]) => (
             <button key={m} onClick={() => { setMode(m); setLoginError(""); setSignupError(""); }} style={{
@@ -380,9 +380,21 @@ function AuthPage({ onLoginSuccess }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SIDEBAR
+// SIDEBAR (desktop) + MOBILE NAV
 // ─────────────────────────────────────────────────────────────────────────────
+function useIsMobile() {
+  const [mobile, setMobile] = useState(window.innerWidth < 768);
+  useEffect(() => {
+    const fn = () => setMobile(window.innerWidth < 768);
+    window.addEventListener("resize", fn);
+    return () => window.removeEventListener("resize", fn);
+  }, []);
+  return mobile;
+}
+
 function Sidebar({ user, page, setPage, onLogout, pendingCount = 0 }) {
+  const isMobile = useIsMobile();
+  const [menuOpen, setMenuOpen] = useState(false);
   const NAV = [
     { id: "dashboard", icon: "🏠", label: "Dashboard" },
     { id: "about", icon: "ℹ️", label: "About" },
@@ -390,10 +402,12 @@ function Sidebar({ user, page, setPage, onLogout, pendingCount = 0 }) {
     { id: "meetups", icon: "📅", label: "Meetups" },
     { id: "leaderboard", icon: "🏆", label: "Leaderboard" },
     { id: "loans", icon: "🔄", label: "Book Loans", badge: pendingCount },
+    ...(user.role === "admin" ? [{ id: "admin", icon: "⚙️", label: "Admin" }] : []),
   ];
-  const navBtn = (id, icon, label, badge = 0) => (
-    <button key={id} onClick={() => setPage(id)} style={{
-      display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 12px",
+
+  const navBtn = (id, icon, label, badge = 0, onClick) => (
+    <button key={id} onClick={() => { setPage(id); if (onClick) onClick(); }} style={{
+      display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "11px 14px",
       borderRadius: 8, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 500,
       fontFamily: "sans-serif", textAlign: "left", marginBottom: 2,
       background: page === id ? "#c9883a" : "rgba(255,255,255,0.04)",
@@ -404,21 +418,43 @@ function Sidebar({ user, page, setPage, onLogout, pendingCount = 0 }) {
       {badge > 0 && <span style={{ background: "#ef4444", color: "#fff", borderRadius: 20, fontSize: 10, fontWeight: 700, padding: "1px 6px" }}>{badge}</span>}
     </button>
   );
+
+  // ── Mobile: top bar + slide-down menu ──
+  if (isMobile) return (
+    <>
+      <div style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 200, background: "#1a1008", display: "flex", alignItems: "center", padding: "0 16px", height: 52, boxShadow: "0 2px 8px rgba(0,0,0,0.3)" }}>
+        <div style={{ fontFamily: "Georgia, serif", fontSize: 16, fontWeight: 900, color: "#c9883a", flex: 1 }}>Warangal Bookies</div>
+        {pendingCount > 0 && <span style={{ background: "#ef4444", color: "#fff", borderRadius: 20, fontSize: 10, fontWeight: 700, padding: "2px 7px", marginRight: 10 }}>{pendingCount}</span>}
+        <button onClick={() => setMenuOpen(o => !o)} style={{ background: "none", border: "none", color: "#fff", fontSize: 22, cursor: "pointer", padding: 4 }}>
+          {menuOpen ? "✕" : "☰"}
+        </button>
+      </div>
+      {menuOpen && (
+        <div style={{ position: "fixed", top: 52, left: 0, right: 0, zIndex: 199, background: "#1a1008", padding: "10px 12px 16px", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
+          {NAV.map(n => navBtn(n.id, n.icon, n.label, n.badge || 0, () => setMenuOpen(false)))}
+          <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", marginTop: 10, paddingTop: 10, display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 30, height: 30, borderRadius: "50%", background: "#c9883a", color: "#1a1008", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{user.avatar}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{user.name}</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", textTransform: "capitalize" }}>{user.role}</div>
+            </div>
+            <button onClick={onLogout} style={{ background: "#fee2e2", border: "none", color: "#dc2626", borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: "inherit" }}>Logout</button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+
+  // ── Desktop: fixed left sidebar ──
   return (
-    <div style={{ width: 240, background: "#1a1008", display: "flex", flexDirection: "column", flexShrink: 0 }}>
+    <div style={{ width: 240, background: "#1a1008", display: "flex", flexDirection: "column", flexShrink: 0, height: "100vh", position: "sticky", top: 0 }}>
       <div style={{ padding: "24px 18px 18px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
         <div style={{ fontFamily: "Georgia, serif", fontSize: 17, fontWeight: 900, color: "#c9883a" }}>Warangal Bookies</div>
         <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", letterSpacing: 2, textTransform: "uppercase", marginTop: 3 }}>Book Club · Warangal</div>
       </div>
-      <div style={{ flex: 1, padding: "14px 10px" }}>
+      <div style={{ flex: 1, padding: "14px 10px", overflowY: "auto" }}>
         <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", letterSpacing: 2, textTransform: "uppercase", padding: "4px 10px 8px" }}>Menu</div>
         {NAV.map(n => navBtn(n.id, n.icon, n.label, n.badge || 0))}
-        {user.role === "admin" && (
-          <>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", letterSpacing: 2, textTransform: "uppercase", padding: "12px 10px 8px" }}>Admin</div>
-            {navBtn("admin", "⚙️", "Admin Dashboard")}
-          </>
-        )}
       </div>
       <div style={{ padding: "12px 14px", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#c9883a", color: "#1a1008", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{user.avatar}</div>
@@ -447,7 +483,7 @@ function Dashboard({ user, books, meetups, loans, loanRequests, setPage }) {
     (r.type === "offer" && r.requester_id === user.id)
   ));
   return (
-    <div style={{ padding: 28 }}>
+    <div style={{ padding: 'clamp(14px, 4vw, 28px)' }}>
       <div style={{ marginBottom: 24 }}>
         <div style={{ fontSize: 13, color: "#8b5e3c" }}>Welcome back,</div>
         <div style={{ fontFamily: "Georgia, serif", fontSize: 28, fontWeight: 700, color: "#1a1008" }}>{user.name} 👋</div>
@@ -464,7 +500,7 @@ function Dashboard({ user, books, meetups, loans, loanRequests, setPage }) {
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 12, marginBottom: 24 }}>
         {[["⭐", user.points, "Points"], ["📅", user.meetups_attended, "Meetups Attended"], ["📚", safeBooks.filter(b => b.owner_id === user.id).length, "Books Owned"], ["🔄", activeLoans.length, "Active Loans"]].map(([icon, val, label]) => (
           <div key={label} style={{ background: "#fff", border: "1px solid #e8ddd0", borderRadius: 12, padding: 18 }}>
             <div style={{ fontSize: 22, marginBottom: 8 }}>{icon}</div>
@@ -474,7 +510,7 @@ function Dashboard({ user, books, meetups, loans, loanRequests, setPage }) {
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
         <div style={{ background: "#fff", border: "1px solid #e8ddd0", borderRadius: 12, padding: 20 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
             <div style={{ fontFamily: "Georgia, serif", fontSize: 16, fontWeight: 700 }}>Upcoming Meetups</div>
@@ -523,7 +559,7 @@ function Dashboard({ user, books, meetups, loans, loanRequests, setPage }) {
 // ─────────────────────────────────────────────────────────────────────────────
 function AboutPage({ users }) {
   return (
-    <div style={{ padding: 28 }}>
+    <div style={{ padding: 'clamp(14px, 4vw, 28px)' }}>
       <div style={{ background: "#1a1008", color: "#fff", borderRadius: 14, padding: 36, marginBottom: 22, position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", right: 36, top: "50%", transform: "translateY(-50%)", fontSize: 110, opacity: 0.07 }}>📖</div>
         <div style={{ fontFamily: "Georgia, serif", fontSize: 32, fontWeight: 700 }}>Warangal Bookies 📖</div>
@@ -531,7 +567,7 @@ function AboutPage({ users }) {
           A community of passionate readers from Warangal, coming together to share stories, ideas, and the timeless joy of books.
         </div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 22 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16, marginBottom: 22 }}>
         <div style={{ background: "#fff", border: "1px solid #e8ddd0", borderRadius: 12, padding: 20 }}>
           <div style={{ fontFamily: "Georgia, serif", fontSize: 16, fontWeight: 700, marginBottom: 10 }}>Our Mission</div>
           <div style={{ fontSize: 14, color: "#555", lineHeight: 1.8 }}>Founded with the belief that reading is better together. We celebrate diverse books, spirited discussion, and a welcoming community.</div>
@@ -555,7 +591,7 @@ function AboutPage({ users }) {
         </div>
       </div>
       <div style={{ fontFamily: "Georgia, serif", fontSize: 18, fontWeight: 700, marginBottom: 14 }}>Our Members</div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px,1fr))", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px,1fr))", gap: 12 }}>
         {users.map(u => (
           <div key={u.id} style={{ background: "#fff", border: "1px solid #e8ddd0", borderRadius: 12, padding: 16, textAlign: "center" }}>
             <div style={{ width: 48, height: 48, borderRadius: "50%", background: "#1a1008", color: "#c9883a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 700, margin: "0 auto 10px" }}>{u.avatar}</div>
@@ -606,7 +642,7 @@ function BooksPage({ books, users, currentUser, onRefresh, showToast }) {
   }
 
   return (
-    <div style={{ padding: 28 }}>
+    <div style={{ padding: 'clamp(14px, 4vw, 28px)' }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
         <div>
           <div style={{ fontFamily: "Georgia, serif", fontSize: 26, fontWeight: 700, color: "#1a1008" }}>Book Library</div>
@@ -619,7 +655,7 @@ function BooksPage({ books, users, currentUser, onRefresh, showToast }) {
           style={{ padding: "8px 14px", border: "1.5px solid #e0d5c5", borderRadius: 8, fontSize: 14, fontFamily: "inherit", outline: "none", width: 230 }} />
         <TabBar tabs={[["all", "All Books"], ["available", "Available"], ["mine", "My Books"]]} active={filter} onChange={setFilter} />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px,1fr))", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px,1fr))", gap: 14 }}>
         {filtered.map(b => {
           const owner = users.find(u => u.id === b.owner_id);
           return (
@@ -673,7 +709,7 @@ function MeetupsPage({ meetups, users, currentUser, onRefresh, showToast }) {
   }
 
   return (
-    <div style={{ padding: 28 }}>
+    <div style={{ padding: 'clamp(14px, 4vw, 28px)' }}>
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontFamily: "Georgia, serif", fontSize: 26, fontWeight: 700, color: "#1a1008" }}>Meetups</div>
         <div style={{ fontSize: 13, color: "#8b5e3c" }}>Join us for our monthly book discussions</div>
@@ -724,12 +760,12 @@ function LeaderboardPage({ users }) {
   const sorted = [...users].sort((a, b) => (b.points || 0) - (a.points || 0));
   const max = sorted[0]?.points || 1;
   return (
-    <div style={{ padding: 28 }}>
+    <div style={{ padding: 'clamp(14px, 4vw, 28px)' }}>
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontFamily: "Georgia, serif", fontSize: 26, fontWeight: 700, color: "#1a1008" }}>Leaderboard</div>
         <div style={{ fontSize: 13, color: "#8b5e3c" }}>Earn points by attending meetups and lending books</div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 22 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16, marginBottom: 22 }}>
         <div style={{ background: "#1a1008", color: "#fff", borderRadius: 12, padding: 22 }}>
           <div style={{ fontSize: 12, opacity: 0.5, textTransform: "uppercase", letterSpacing: 1 }}>🏆 Top Reader</div>
           <div style={{ fontFamily: "Georgia, serif", fontSize: 24, fontWeight: 700, marginTop: 8 }}>{sorted[0]?.name}</div>
@@ -894,13 +930,13 @@ function BookLoansPage({ loans, loanRequests, books, users, currentUser, onRefre
   const myBooks = books.filter(b => b.owner_id === currentUser.id);
 
   return (
-    <div style={{ padding: 28 }}>
+    <div style={{ padding: 'clamp(14px, 4vw, 28px)' }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
         <div>
           <div style={{ fontFamily: "Georgia, serif", fontSize: 26, fontWeight: 700, color: "#1a1008" }}>Book Loans</div>
           <div style={{ fontSize: 13, color: "#8b5e3c" }}>Offer to lend your books, or request books from others</div>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <Btn variant="outline" onClick={() => setRequestModal(true)}>📥 Request a Book</Btn>
           <Btn onClick={() => setOfferModal(true)}>📤 Offer to Lend</Btn>
         </div>
@@ -1074,12 +1110,12 @@ function AdminPage({ books, meetups, loans, loanRequests, users, currentUser, on
   }
 
   return (
-    <div style={{ padding: 28 }}>
+    <div style={{ padding: 'clamp(14px, 4vw, 28px)' }}>
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontFamily: "Georgia, serif", fontSize: 26, fontWeight: 700, color: "#1a1008" }}>Admin Dashboard</div>
         <div style={{ fontSize: 13, color: "#8b5e3c" }}>Manage meetups, members, and club activities</div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 22 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 12, marginBottom: 22 }}>
         {[["👥", users.length, "Members"], ["📚", books.length, "Books"], ["📅", meetups.filter(m => m.status === "upcoming").length, "Upcoming"], ["🔄", loans.filter(l => l.status === "active").length, "Active Loans"]].map(([icon, val, label]) => (
           <div key={label} style={{ background: "#fff", border: "1px solid #e8ddd0", borderRadius: 12, padding: 16 }}>
             <div style={{ fontSize: 20, marginBottom: 6 }}>{icon}</div>
@@ -1118,8 +1154,8 @@ function AdminPage({ books, meetups, loans, loanRequests, users, currentUser, on
       )}
 
       {tab === "members" && (
-        <div style={{ background: "#fff", border: "1px solid #e8ddd0", borderRadius: 12, overflow: "hidden" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div style={{ background: "#fff", border: "1px solid #e8ddd0", borderRadius: 12, overflow: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 500 }}>
             <thead><tr style={{ borderBottom: "2px solid #f0e8d8" }}>
               {["Member", "Role", "Points", "Meetups", "Books Lent"].map(h => (
                 <th key={h} style={{ textAlign: "left", fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#8b5e3c", padding: "10px 14px" }}>{h}</th>
@@ -1260,6 +1296,17 @@ export default function App() {
     }
   }
 
+  // On mount: if user was restored from localStorage, load data
+  useEffect(() => {
+    const saved = localStorage.getItem("wb_user");
+    if (saved) {
+      try {
+        const u = JSON.parse(saved);
+        if (u && u.id) loadData(u);
+      } catch { localStorage.removeItem("wb_user"); }
+    }
+  }, []); // eslint-disable-line
+
   // Not logged in
   if (!user) return <AuthPage onLoginSuccess={u => {
     if (!u || !u.id || !u.name) {
@@ -1297,11 +1344,12 @@ export default function App() {
     return <Dashboard {...props} setPage={setPage} />;
   };
 
+  const isMobile = window.innerWidth < 768;
   return (
     <ErrorBoundary>
     <div style={{ display: "flex", height: "100vh", fontFamily: "sans-serif", background: "#faf6ef", overflow: "hidden" }}>
       <Sidebar user={user} page={page} setPage={setPage} onLogout={() => { localStorage.removeItem("wb_user"); setUser(null); setPage("dashboard"); }} pendingCount={myPending.length} />
-      <div style={{ flex: 1, overflowY: "auto", background: "#faf6ef" }}>
+      <div style={{ flex: 1, overflowY: "auto", background: "#faf6ef", paddingTop: isMobile ? 52 : 0 }}>
         {configMissing && (
           <div style={{ background: "#1a1008", color: "#c9883a", padding: "12px 24px", fontSize: 13, display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontSize: 18 }}>⚙️</span>
