@@ -637,7 +637,7 @@ function AboutPage({ users }) {
           </div>
         ))}
       </div>
-    </div>
+}</div>
   );
 }
 
