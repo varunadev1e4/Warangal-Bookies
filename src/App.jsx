@@ -437,8 +437,13 @@ function Sidebar({ user, page, setPage, onLogout, pendingCount = 0 }) {
 // DASHBOARD
 // ─────────────────────────────────────────────────────────────────────────────
 function Dashboard({ user, books, meetups, loans, loanRequests, setPage }) {
-  const activeLoans = loans.filter(l => (l.lender_id === user.id || l.borrower_id === user.id) && l.status === "active");
-  const pendingForMe = loanRequests.filter(r => r.status === "pending" && (
+  if (!user) return null;
+  const safeLoans = (loans || []).filter(l => l && l.lender_id && l.borrower_id);
+  const safeMeetups = (meetups || []).filter(m => m && m.status);
+  const safeLoanRequests = (loanRequests || []).filter(r => r && r.status);
+  const safeBooks = (books || []).filter(b => b && b.id);
+  const activeLoans = safeLoans.filter(l => (l.lender_id === user.id || l.borrower_id === user.id) && l.status === "active");
+  const pendingForMe = safeLoanRequests.filter(r => r.status === "pending" && (
     (r.type === "request" && r.book_owner_id === user.id) ||
     (r.type === "offer" && r.requester_id === user.id)
   ));
@@ -461,7 +466,7 @@ function Dashboard({ user, books, meetups, loans, loanRequests, setPage }) {
       )}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 24 }}>
-        {[["⭐", user.points, "Points"], ["📅", user.meetups_attended, "Meetups Attended"], ["📚", books.filter(b => b.owner_id === user.id).length, "Books Owned"], ["🔄", activeLoans.length, "Active Loans"]].map(([icon, val, label]) => (
+        {[["⭐", user.points, "Points"], ["📅", user.meetups_attended, "Meetups Attended"], ["📚", safeBooks.filter(b => b.owner_id === user.id).length, "Books Owned"], ["🔄", activeLoans.length, "Active Loans"]].map(([icon, val, label]) => (
           <div key={label} style={{ background: "#fff", border: "1px solid #e8ddd0", borderRadius: 12, padding: 18 }}>
             <div style={{ fontSize: 22, marginBottom: 8 }}>{icon}</div>
             <div style={{ fontFamily: "Georgia, serif", fontSize: 26, fontWeight: 700, color: "#1a1008" }}>{val ?? 0}</div>
@@ -476,7 +481,7 @@ function Dashboard({ user, books, meetups, loans, loanRequests, setPage }) {
             <div style={{ fontFamily: "Georgia, serif", fontSize: 16, fontWeight: 700 }}>Upcoming Meetups</div>
             <Btn onClick={() => setPage("meetups")} variant="outline" small>View all</Btn>
           </div>
-          {meetups.filter(m => m.status === "upcoming").slice(0, 2).map(m => (
+          {safeMeetups.filter(m => m.status === "upcoming").slice(0, 2).map(m => (
             <div key={m.id} style={{ display: "flex", gap: 12, marginBottom: 14 }}>
               <div style={{ background: "#1a1008", color: "#fff", borderRadius: 8, padding: "8px 10px", textAlign: "center", minWidth: 42, flexShrink: 0 }}>
                 <div style={{ fontFamily: "Georgia, serif", fontSize: 18, fontWeight: 700, lineHeight: 1 }}>{new Date(m.date).getDate()}</div>
@@ -489,7 +494,7 @@ function Dashboard({ user, books, meetups, loans, loanRequests, setPage }) {
               </div>
             </div>
           ))}
-          {meetups.filter(m => m.status === "upcoming").length === 0 && <div style={{ color: "#aaa", fontSize: 13 }}>No upcoming meetups.</div>}
+          {safeMeetups.filter(m => m.status === "upcoming").length === 0 && <div style={{ color: "#aaa", fontSize: 13 }}>No upcoming meetups.</div>}
         </div>
         <div style={{ background: "#fff", border: "1px solid #e8ddd0", borderRadius: 12, padding: 20 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
@@ -503,7 +508,7 @@ function Dashboard({ user, books, meetups, loans, loanRequests, setPage }) {
                 <span style={{ fontSize: 20 }}>📗</span>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 600, fontSize: 13 }}>{l.book_title}</div>
-                  <div style={{ fontSize: 12, color: "#8b5e3c" }}>{l.lender_id === user.id ? `→ ${l.borrower_name}` : `← ${l.lender_name}`}</div>
+                  <div style={{ fontSize: 12, color: "#8b5e3c" }}>{l.lender_id === user.id ? `→ ${l.borrower_name || "Unknown"}` : `← ${l.lender_name || "Unknown"}`}</div>
                 </div>
                 <Badge type={isOverdue(l.due_date) ? "red" : "yellow"}>{isOverdue(l.due_date) ? "Overdue" : "Active"}</Badge>
               </div>
@@ -625,7 +630,7 @@ function BooksPage({ books, users, currentUser, onRefresh, showToast }) {
               <div style={{ fontSize: 13, color: "#8b5e3c", marginTop: 2 }}>by {b.author}</div>
               {b.genre && <div style={{ fontSize: 11, background: "#f0e8d8", color: "#8b5e3c", borderRadius: 20, padding: "2px 10px", display: "inline-block", margin: "7px 0" }}>{b.genre}</div>}
               <div style={{ fontSize: 13, color: "#c9883a" }}>{"★".repeat(Math.round(b.rating || 4))} <span style={{ fontSize: 12, color: "#aaa" }}>{b.rating}</span></div>
-              <div style={{ fontSize: 11, color: "#aaa", marginTop: 4 }}>By {owner?.name || b.owner_name}</div>
+              <div style={{ fontSize: 11, color: "#aaa", marginTop: 4 }}>By {owner?.name || b.owner_name || "Unknown"}</div>
               <div style={{ marginTop: 8 }}><Badge type={b.available ? "green" : "yellow"}>{b.available ? "✓ Available" : "⏳ On Loan"}</Badge></div>
             </div>
           );
@@ -690,13 +695,13 @@ function MeetupsPage({ meetups, users, currentUser, onRefresh, showToast }) {
                 <div style={{ fontFamily: "Georgia, serif", fontSize: 16, fontWeight: 700 }}>{m.title}</div>
                 <div style={{ fontSize: 13, color: "#8b5e3c", marginTop: 4, display: "flex", flexWrap: "wrap", gap: 10 }}>
                   <span>🕕 {m.time}</span><span>📍 {m.venue}</span><span>📗 {m.book}</span>
-                  {host && <span>👤 {host.name}</span>}
+                  {host?.name && <span>👤 {host.name}</span>}
                 </div>
                 <div style={{ fontSize: 13, color: "#999", marginTop: 6 }}>{m.description}</div>
                 <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 10, flexWrap: "wrap" }}>
                   {(m.attendees || []).map(aid => {
                     const u = users.find(x => x.id === aid);
-                    return u ? <div key={aid} title={u.name} style={{ width: 24, height: 24, borderRadius: "50%", background: "#f0e8d8", color: "#8b5e3c", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700 }}>{u.avatar}</div> : null;
+                    return (u && u.name) ? <div key={aid} title={u.name} style={{ width: 24, height: 24, borderRadius: "50%", background: "#f0e8d8", color: "#8b5e3c", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700 }}>{u.avatar}</div> : null;
                   })}
                   <span style={{ fontSize: 12, color: "#aaa" }}>{(m.attendees || []).length}/{m.max_attendees} attending</span>
                 </div>
@@ -934,7 +939,7 @@ function BookLoansPage({ loans, loanRequests, books, users, currentUser, onRefre
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 600, fontSize: 13 }}>{req.book_title}</div>
                 <div style={{ fontSize: 12, color: "#0369a1" }}>
-                  {req.type === "request" ? `Requested from ${req.owner_name}` : `Offered to ${req.requester_name}`}
+                  {req.type === "request" ? `Requested from ${req.owner_name || "Unknown"}` : `Offered to ${req.requester_name || "Unknown"}`}
                   {" · "} Due by {formatDate(req.proposed_due_date)}
                 </div>
               </div>
@@ -1270,6 +1275,8 @@ export default function App() {
   console.log("APP RENDER — users[0]:", JSON.stringify(users[0]));
   console.log("APP RENDER — books[0]:", JSON.stringify(books[0]));
   console.log("APP RENDER — meetups[0]:", JSON.stringify(meetups[0]));
+  console.log("APP RENDER — loanRequests:", JSON.stringify(loanRequests));
+  console.log("APP RENDER — loans:", JSON.stringify(loans));
 
   // DEBUG SCREEN — shows raw Supabase data so we can see exactly what came back
   // Remove this block once the app is working
