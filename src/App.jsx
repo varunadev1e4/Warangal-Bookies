@@ -510,7 +510,7 @@ function Dashboard({ user, books, meetups, loans, loanRequests, setPage, loading
   return (
     <Page>
       <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 13, color: "#ffffff" }}>Welcome back,</div>
+        <div style={{ fontSize: 13, color: "#8b5e3c" }}>Welcome back,</div>
         <div style={{ fontFamily: "Georgia, serif", fontSize: "clamp(20px, 5vw, 28px)", fontWeight: 700, color: "#1a1008" }}>{user.name} 👋</div>
       </div>
 
@@ -645,7 +645,8 @@ function AboutPage({ users }) {
           </div>
         ))}
       </div>
-}</Page>
+}
+    </Page>
   );
 }
 
@@ -1398,14 +1399,14 @@ export default function App() {
 
   const renderPage = () => {
       const props = { users, books, meetups, loans, loanRequests, currentUser: user, onRefresh: () => loadData(user), showToast, loading };
-    if (page === "dashboard") return <Dashboard {...props} setPage={setPage} loading={loading} />;
+    if (page === "dashboard") return <Dashboard {...props} user={user} setPage={setPage} loading={loading} />;
     if (page === "about") return <AboutPage users={users} />;
     if (page === "books") return <BooksPage {...props} />;
     if (page === "meetups") return <MeetupsPage {...props} />;
     if (page === "leaderboard") return <LeaderboardPage users={users} />;
     if (page === "loans") return <BookLoansPage {...props} />;
     if (page === "admin" && user.role === "admin") return <AdminPage {...props} />;
-    return <Dashboard {...props} setPage={setPage} />;
+    return <Dashboard {...props} user={user} setPage={setPage} />;
   };
 
   const isMobile = window.innerWidth < 768;
