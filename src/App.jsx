@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SUPABASE CONFIG — replace these two values after you create your project
@@ -220,13 +220,25 @@ function AuthPage({ onLoginSuccess }) {
         books_lent: 0,
         meetups_attended: 0,
       });
-      // Re-fetch to guarantee we have the full row with DB-assigned id
-      const rows2 = await sb.select("users", "?email=eq." + encodeURIComponent(emailKey));
-      const newUser = rows2[0];
-      if (!newUser) throw new Error("Account created but could not load profile. Please try logging in.");
       setSignupRole(role);
       setSignupSuccess(true);
-      setTimeout(() => onLoginSuccess(newUser), 1800);
+      // Wait for the success screen, then re-fetch fresh from DB right before login
+      // (avoids stale closure and Supabase replication delay)
+      setTimeout(async () => {
+        try {
+          const rows2 = await sb.select("users", "?email=eq." + encodeURIComponent(emailKey));
+          const freshUser = rows2[0];
+          if (!freshUser || !freshUser.id || !freshUser.name) {
+            setSignupSuccess(false);
+            setSignupError("Account created! Please sign in manually.");
+            return;
+          }
+          onLoginSuccess(freshUser);
+        } catch (e) {
+          setSignupSuccess(false);
+          setSignupError("Account created! Please sign in manually.");
+        }
+      }, 1800);
     } catch (e) {
       setSignupError("Could not create account. " + e.message);
     } finally { setSignupLoading(false); }
@@ -1176,17 +1188,21 @@ export default function App() {
   const [loans, setLoans] = useState([]);
   const [loanRequests, setLoanRequests] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [toast, setToast] = useState(null);
-  const [dbReady, setDbReady] = useState(true);
 
   function showToast(msg, type = "success") {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
   }
 
-  // Load all data from Supabase
+  // Use a ref so loadData always sees the latest user without stale closure
+  const userRef = useRef(user);
+  useEffect(() => { userRef.current = user; }, [user]);
+
   const loadData = useCallback(async () => {
-    if (!user) return;
+    const currentUser = userRef.current;
+    if (!currentUser) return;
     setLoading(true);
     try {
       const [u, b, m, l, lr] = await Promise.all([
@@ -1196,19 +1212,37 @@ export default function App() {
         sb.select("loans", "?order=lent_date.desc"),
         sb.select("loan_requests", "?order=id.desc"),
       ]);
-      setUsers(u); setBooks(b); setMeetups(m); setLoans(l); setLoanRequests(lr);
+      setUsers(u || []); setBooks(b || []); setMeetups(m || []);
+      setLoans(l || []); setLoanRequests(lr || []);
+      setDataLoaded(true);
     } catch (e) {
-      showToast("Could not load data. Check your Supabase config.", "error");
-      setDbReady(false);
+      showToast("Could not load data: " + e.message, "error");
+      setDataLoaded(true); // still show the app, just with empty data
     } finally { setLoading(false); }
-  }, [user]);
+  }, []); // no dependencies — uses ref internally
 
-  useEffect(() => { loadData(); }, [loadData]);
+  // Trigger load whenever user changes (login/logout)
+  useEffect(() => {
+    if (user) {
+      setDataLoaded(false);
+      loadData();
+    } else {
+      // Reset all data on logout
+      setUsers([]); setBooks([]); setMeetups([]);
+      setLoans([]); setLoanRequests([]);
+      setDataLoaded(false);
+    }
+  }, [user, loadData]);
 
-  if (!user) return <AuthPage onLoginSuccess={u => { if (!u || !u.id) return; setUser(u); setPage("dashboard"); }} />;
-  if (loading && users.length === 0) return <LoadingScreen message="Loading your book club…" />;
-  // Safety guard — should never happen but prevents crash if user object is malformed
-  if (!user.name) return <LoadingScreen message="Setting up your profile…" />;
+  // Not logged in
+  if (!user) return <AuthPage onLoginSuccess={u => {
+    if (!u || !u.id || !u.name) return;
+    setUser(u);
+    setPage("dashboard");
+  }} />;
+
+  // Logged in but data still loading
+  if (!dataLoaded) return <LoadingScreen message={"Welcome, " + user.name + "! Loading your book club…"} />;
 
   const myPending = loanRequests.filter(r => r.status === "pending" && (
     (r.type === "request" && r.book_owner_id === user.id) ||
