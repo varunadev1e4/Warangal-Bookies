@@ -510,7 +510,7 @@ function Dashboard({ user, books, meetups, loans, loanRequests, setPage, loading
   return (
     <Page>
       <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 13, color: "#8b5e3c" }}>Welcome back,</div>
+        <div style={{ fontSize: 13, color: "#ffffff" }}>Welcome back,</div>
         <div style={{ fontFamily: "Georgia, serif", fontSize: "clamp(20px, 5vw, 28px)", fontWeight: 700, color: "#1a1008" }}>{user.name} 👋</div>
       </div>
 
