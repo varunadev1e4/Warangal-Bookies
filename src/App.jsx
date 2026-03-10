@@ -1,4 +1,35 @@
-import { useState } from "react";
+import { useState, Component } from "react";
+
+class ErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { err: null }; }
+  static getDerivedStateFromError(e) { return { err: e }; }
+  componentDidCatch(e, info) { console.error("RENDER CRASH:", e, info); }
+  render() {
+    if (this.state.err) {
+      return (
+        <div style={{ padding: 40, fontFamily: "sans-serif", background: "#faf6ef", minHeight: "100vh" }}>
+          <div style={{ background: "#fee2e2", border: "2px solid #fca5a5", borderRadius: 12, padding: 28, maxWidth: 680, margin: "60px auto" }}>
+            <div style={{ fontSize: 24, fontWeight: 700, color: "#dc2626", marginBottom: 12 }}>💥 Render crash — here is the exact error:</div>
+            <div style={{ fontWeight: 700, fontSize: 15, color: "#7f1d1d", marginBottom: 12, background: "#fff", padding: 14, borderRadius: 8 }}>
+              {this.state.err.message}
+            </div>
+            <pre style={{ fontSize: 11, color: "#7f1d1d", background: "#fff8f8", padding: 16, borderRadius: 8, overflowX: "auto", whiteSpace: "pre-wrap", maxHeight: 300, overflowY: "auto" }}>
+              {this.state.err.stack}
+            </pre>
+            <div style={{ marginTop: 16, fontSize: 13, color: "#666" }}>
+              Screenshot this and share it — it will show exactly what broke and where.
+            </div>
+            <button onClick={() => window.location.reload()}
+              style={{ marginTop: 16, padding: "10px 20px", background: "#dc2626", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 14, fontWeight: 600 }}>
+              Reload Page
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SUPABASE CONFIG — replace these two values after you create your project
@@ -1254,6 +1285,7 @@ export default function App() {
   };
 
   return (
+    <ErrorBoundary>
     <div style={{ display: "flex", height: "100vh", fontFamily: "sans-serif", background: "#faf6ef", overflow: "hidden" }}>
       <Sidebar user={user} page={page} setPage={setPage} onLogout={() => { setUser(null); setPage("dashboard"); }} pendingCount={myPending.length} />
       <div style={{ flex: 1, overflowY: "auto", background: "#faf6ef" }}>
@@ -1272,5 +1304,6 @@ export default function App() {
       </div>
       {toast && <Toast msg={toast.msg} type={toast.type} />}
     </div>
+    </ErrorBoundary>
   );
 }
