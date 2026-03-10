@@ -1,9 +1,5 @@
 import { useState, useEffect, Component } from "react";
-const globalStyles = {
-  fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial",
-  color: "#1f2937",
-  lineHeight: 1.6
-};
+
 class ErrorBoundary extends Component {
   constructor(props) { super(props); this.state = { err: null }; }
   static getDerivedStateFromError(e) { return { err: e }; }
@@ -319,7 +315,7 @@ function AuthPage({ onLoginSuccess }) {
   );
 
   return (
-    <div style={globalStyles}>
+    <div style={{ minHeight: "100vh", display: "flex", fontFamily: "sans-serif" }}>
       {leftPanel}
       <div style={{ width: "min(440px, 100vw)", background: "#faf6ef", display: "flex", flexDirection: "column", justifyContent: "center", padding: "40px clamp(20px, 6vw, 48px)", overflowY: "auto" }}>
         <div style={{ display: "flex", background: "#f0e8d8", borderRadius: 10, padding: 4, marginBottom: 24 }}>
