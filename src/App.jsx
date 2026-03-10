@@ -276,7 +276,7 @@ function AuthPage({ onLoginSuccess }) {
   }
 
   const leftPanel = (
-    <div style={{ flex: 1, background: "#1a1008", display: window.innerWidth < 640 ? "none" : "flex", display: "flex", flexDirection: "column", justifyContent: "center", padding: "60px 80px", position: "relative", overflow: "hidden" }}>
+    <div style={{ flex: 1, background: "#1a1008", display: "flex", flexDirection: "column", justifyContent: "center", padding: "60px 80px", position: "relative", overflow: "hidden" }}>
       <div style={{ position: "absolute", top: -80, right: -80, width: 320, height: 320, borderRadius: "50%", background: "radial-gradient(circle, rgba(201,136,58,0.2), transparent 70%)" }} />
       <div style={{ fontSize: 52, fontWeight: 900, color: "#c9883a", lineHeight: 1.1, fontFamily: "Georgia, serif" }}>Warangal<br />Bookies</div>
       <div style={{ fontSize: 15, color: "rgba(255,255,255,0.5)", marginTop: 16, lineHeight: 1.9, maxWidth: 340 }}>
@@ -284,7 +284,7 @@ function AuthPage({ onLoginSuccess }) {
       </div>
       <div style={{ marginTop: 32, display: "flex", flexDirection: "column", gap: 12 }}>
         {[["📅", "Monthly meetups & discussions"], ["📚", "Community book library"], ["🏆", "Points & leaderboard"], ["🔄", "Easy book lending"]].map(([icon, text]) => (
-          <div key={text} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "rgba(255,255,255,0.45)" }}>
+          <div key={text} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "rgba(255,255,255,0.7)" }}>
             <span style={{ fontSize: 18 }}>{icon}</span>{text}
           </div>
         ))}
@@ -460,7 +460,7 @@ function Sidebar({ user, page, setPage, onLogout, pendingCount = 0 }) {
         <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#c9883a", color: "#1a1008", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{user.avatar}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.name}</div>
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", textTransform: "capitalize" }}>{user.role}</div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", textTransform: "capitalize" }}>{user.role}</div>
         </div>
         <button onClick={onLogout} title="Logout" style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "rgba(255,255,255,0.4)", padding: 4 }}>⏏</button>
       </div>
@@ -597,7 +597,7 @@ function AboutPage({ users }) {
       <div style={{ background: "#1a1008", color: "#fff", borderRadius: 14, padding: 36, marginBottom: 22, position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", right: 36, top: "50%", transform: "translateY(-50%)", fontSize: 110, opacity: 0.07 }}>📖</div>
         <div style={{ fontFamily: "Georgia, serif", fontSize: 32, fontWeight: 700 }}>Warangal Bookies 📖</div>
-        <div style={{ fontSize: 15, color: "rgba(255,255,255,0.55)", marginTop: 10, maxWidth: 500, lineHeight: 1.8 }}>
+        <div style={{ fontSize: 15, color: "rgba(255,255,255,0.75)", marginTop: 10, maxWidth: 500, lineHeight: 1.8 }}>
           A community of passionate readers from Warangal, coming together to share stories, ideas, and the timeless joy of books.
         </div>
       </div>
@@ -617,25 +617,27 @@ function AboutPage({ users }) {
         <div style={{ background: "#fff", border: "1px solid #e8ddd0", borderRadius: 12, padding: 20 }}>
           <div style={{ fontFamily: "Georgia, serif", fontSize: 16, fontWeight: 700, marginBottom: 10 }}>How It Works</div>
           {["Join and get your member profile", "Add your books to the shared library", "Attend meetups to earn points", "Lend & borrow books for more points", "Climb the leaderboard!"].map((t, i) => (
-            <div key={i} style={{ display: "flex", gap: 10, marginBottom: 10 }}>
-              <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#1a1008", color: "#c9883a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{i + 1}</div>
-              <div style={{ fontSize: 13, paddingTop: 2 }}>{t}</div>
+            <div key={i} style={{ display: "flex", gap: 12, marginBottom: 12, alignItems: "center" }}>
+              <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#1a1008", color: "#c9883a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, flexShrink: 0, lineHeight: 1 }}>{i + 1}</div>
+              <div style={{ fontSize: 13, color: "#3d2b1a", lineHeight: 1.4 }}>{t}</div>
             </div>
           ))}
         </div>
       </div>
       <div style={{ fontFamily: "Georgia, serif", fontSize: 18, fontWeight: 700, marginBottom: 14 }}>Our Members</div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px,1fr))", gap: 12 }}>
+      {(!users || users.length === 0)
+        ? <div style={{ textAlign: "center", padding: 40, color: "#aaa", fontSize: 14 }}>No members yet.</div>
+        : <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px,1fr))", gap: 12 }}>
         {users.map(u => (
           <div key={u.id} style={{ background: "#fff", border: "1px solid #e8ddd0", borderRadius: 12, padding: 16, textAlign: "center" }}>
             <div style={{ width: 48, height: 48, borderRadius: "50%", background: "#1a1008", color: "#c9883a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 700, margin: "0 auto 10px" }}>{u.avatar}</div>
-            <div style={{ fontWeight: 600, fontSize: 13 }}>{u.name}</div>
-            <div style={{ fontSize: 11, color: "#8b5e3c", textTransform: "capitalize" }}>{u.role}</div>
-            <div style={{ fontSize: 12, color: "#c9883a", marginTop: 4 }}>⭐ {u.points} pts</div>
+            <div style={{ fontWeight: 600, fontSize: 13, color: "#1a1008" }}>{u.name}</div>
+            <div style={{ fontSize: 12, color: "#8b5e3c", textTransform: "capitalize", marginTop: 2 }}>{u.role}</div>
+            <div style={{ fontSize: 12, color: "#c9883a", marginTop: 4, fontWeight: 600 }}>⭐ {u.points} pts</div>
           </div>
         ))}
       </div>
-    </div>
+}</div>
   );
 }
 
