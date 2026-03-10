@@ -480,7 +480,7 @@ function Sidebar({ user, page, setPage, onLogout, pendingCount = 0 }) {
 // DASHBOARD
 // ─────────────────────────────────────────────────────────────────────────────
 function Dashboard({ user, books, meetups, loans, loanRequests, setPage, loading }) {
-  if (!user) return null;
+  //if (!user) return null;
 
   const safeBooks = (books || []).filter(b => b && b.id);
   const safeMeetups = (meetups || []).filter(m => m && m.id);
