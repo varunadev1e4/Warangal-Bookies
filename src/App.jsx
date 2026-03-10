@@ -36,8 +36,6 @@ class ErrorBoundary extends Component {
 // ─────────────────────────────────────────────────────────────────────────────
 const SUPABASE_URL = "https://aycyyddqyytaenwnksaa.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_gZNhwY9KteONQi-m6h4Edw_fnISCGn-";
-//const SUPABASE_URL = "https://aycyyddqyytaenwnksaa.supabase.co";
-//const SUPABASE_ANON_KEY = "sb_publishable_gZNhwY9KteONQi-m6h4Edw_fnISCGn-";
 
 // ── Tiny Supabase client (no npm package needed) ──────────────────────────
 const sb = {
@@ -1218,7 +1216,12 @@ function AdminPage({ books, meetups, loans, loanRequests, users, currentUser, on
 // APP ROOT
 // ─────────────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem("wb_user");
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
+  });
   const [page, setPage] = useState("dashboard");
   const [users, setUsers] = useState([]);
   const [books, setBooks] = useState([]);
@@ -1263,6 +1266,7 @@ export default function App() {
       alert("Login failed — user profile not found. Please try again.");
       return;
     }
+    localStorage.setItem("wb_user", JSON.stringify(u));
     setUser(u);
     setPage("dashboard");
     loadData(u); // pass user directly, no stale closure possible
@@ -1296,7 +1300,7 @@ export default function App() {
   return (
     <ErrorBoundary>
     <div style={{ display: "flex", height: "100vh", fontFamily: "sans-serif", background: "#faf6ef", overflow: "hidden" }}>
-      <Sidebar user={user} page={page} setPage={setPage} onLogout={() => { setUser(null); setPage("dashboard"); }} pendingCount={myPending.length} />
+      <Sidebar user={user} page={page} setPage={setPage} onLogout={() => { localStorage.removeItem("wb_user"); setUser(null); setPage("dashboard"); }} pendingCount={myPending.length} />
       <div style={{ flex: 1, overflowY: "auto", background: "#faf6ef" }}>
         {configMissing && (
           <div style={{ background: "#1a1008", color: "#c9883a", padding: "12px 24px", fontSize: 13, display: "flex", alignItems: "center", gap: 10 }}>
