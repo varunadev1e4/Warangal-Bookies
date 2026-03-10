@@ -1,5 +1,9 @@
 import { useState, useEffect, Component } from "react";
-
+const globalStyles = {
+  fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial",
+  color: "#1f2937",
+  lineHeight: 1.6
+};
 class ErrorBoundary extends Component {
   constructor(props) { super(props); this.state = { err: null }; }
   static getDerivedStateFromError(e) { return { err: e }; }
@@ -104,6 +108,14 @@ const lStyle = { fontSize: 12, fontWeight: 600, textTransform: "uppercase", lett
 
 function Field({ label, children }) {
   return <div style={{ marginBottom: 14 }}><label style={lStyle}>{label}</label>{children}</div>;
+}
+
+function Page({ children }) {
+  return (
+    <div style={{ padding: "clamp(16px, 4vw, 32px)", maxWidth: 1100, margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
+      {children}
+    </div>
+  );
 }
 
 function Btn({ children, onClick, variant = "primary", small, disabled, style = {} }) {
@@ -307,7 +319,7 @@ function AuthPage({ onLoginSuccess }) {
   );
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", fontFamily: "sans-serif" }}>
+    <div style={globalStyles}>
       {leftPanel}
       <div style={{ width: "min(440px, 100vw)", background: "#faf6ef", display: "flex", flexDirection: "column", justifyContent: "center", padding: "40px clamp(20px, 6vw, 48px)", overflowY: "auto" }}>
         <div style={{ display: "flex", background: "#f0e8d8", borderRadius: 10, padding: 4, marginBottom: 24 }}>
@@ -500,7 +512,7 @@ function Dashboard({ user, books, meetups, loans, loanRequests, setPage, loading
   ];
 
   return (
-    <div style={{ padding: "clamp(14px, 4vw, 28px)" }}>
+    <Page>
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 13, color: "#8b5e3c" }}>Welcome back,</div>
         <div style={{ fontFamily: "Georgia, serif", fontSize: "clamp(20px, 5vw, 28px)", fontWeight: 700, color: "#1a1008" }}>{user.name} 👋</div>
@@ -584,7 +596,7 @@ function Dashboard({ user, books, meetups, loans, loanRequests, setPage, loading
           }
         </div>
       </div>
-    </div>
+    </Page>
   );
 }
 
@@ -593,7 +605,7 @@ function Dashboard({ user, books, meetups, loans, loanRequests, setPage, loading
 // ─────────────────────────────────────────────────────────────────────────────
 function AboutPage({ users }) {
   return (
-    <div style={{ padding: 'clamp(14px, 4vw, 28px)' }}>
+    <Page>
       <div style={{ background: "#1a1008", color: "#fff", borderRadius: 14, padding: 36, marginBottom: 22, position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", right: 36, top: "50%", transform: "translateY(-50%)", fontSize: 110, opacity: 0.07 }}>📖</div>
         <div style={{ fontFamily: "Georgia, serif", fontSize: 32, fontWeight: 700 }}>Warangal Bookies 📖</div>
@@ -637,7 +649,7 @@ function AboutPage({ users }) {
           </div>
         ))}
       </div>
-}</div>
+}</Page>
   );
 }
 
@@ -679,7 +691,7 @@ function BooksPage({ books, users, currentUser, onRefresh, showToast, loading })
   }
 
   return (
-    <div style={{ padding: "clamp(14px, 4vw, 28px)" }}>
+    <Page>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
         <div>
           <div style={{ fontFamily: "Georgia, serif", fontSize: 26, fontWeight: 700, color: "#1a1008" }}>Book Library</div>
@@ -727,7 +739,7 @@ function BooksPage({ books, users, currentUser, onRefresh, showToast, loading })
           </div>
         </Modal>
       )}
-    </div>
+    </Page>
   );
 }
 
@@ -754,7 +766,7 @@ function MeetupsPage({ meetups, users, currentUser, onRefresh, showToast, loadin
   }
 
   return (
-    <div style={{ padding: "clamp(14px, 4vw, 28px)" }}>
+    <Page>
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontFamily: "Georgia, serif", fontSize: 26, fontWeight: 700, color: "#1a1008" }}>Meetups</div>
         <div style={{ fontSize: 13, color: "#8b5e3c" }}>Join us for our monthly book discussions</div>
@@ -800,7 +812,7 @@ function MeetupsPage({ meetups, users, currentUser, onRefresh, showToast, loadin
               );
             })
       }
-    </div>
+    </Page>
   );
 }
 
@@ -811,7 +823,7 @@ function LeaderboardPage({ users, loading }) {
   const sorted = [...(users || [])].sort((a, b) => (b.points || 0) - (a.points || 0));
   const max = sorted[0]?.points || 1;
   return (
-    <div style={{ padding: "clamp(14px, 4vw, 28px)" }}>
+    <Page>
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontFamily: "Georgia, serif", fontSize: 26, fontWeight: 700, color: "#1a1008" }}>Leaderboard</div>
         <div style={{ fontSize: 13, color: "#8b5e3c" }}>Earn points by attending meetups and lending books</div>
@@ -871,7 +883,7 @@ function LeaderboardPage({ users, loading }) {
             </table>
           </div>
       }
-    </div>
+    </Page>
   );
 }
 
@@ -984,7 +996,7 @@ function BookLoansPage({ loans, loanRequests, books, users, currentUser, onRefre
   const myBooks = books.filter(b => b.owner_id === currentUser.id);
 
   return (
-    <div style={{ padding: 'clamp(14px, 4vw, 28px)' }}>
+    <Page>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
         <div>
           <div style={{ fontFamily: "Georgia, serif", fontSize: 26, fontWeight: 700, color: "#1a1008" }}>Book Loans</div>
@@ -1114,7 +1126,7 @@ function BookLoansPage({ loans, loanRequests, books, users, currentUser, onRefre
           </div>
         </Modal>
       )}
-    </div>
+    </Page>
   );
 }
 
@@ -1166,7 +1178,7 @@ function AdminPage({ books, meetups, loans, loanRequests, users, currentUser, on
   }
 
   return (
-    <div style={{ padding: 'clamp(14px, 4vw, 28px)' }}>
+    <Page>
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontFamily: "Georgia, serif", fontSize: 26, fontWeight: 700, color: "#1a1008" }}>Admin Dashboard</div>
         <div style={{ fontSize: 13, color: "#8b5e3c" }}>Manage meetups, members, and club activities</div>
@@ -1300,7 +1312,7 @@ function AdminPage({ books, meetups, loans, loanRequests, users, currentUser, on
           </div>
         </Modal>
       )}
-    </div>
+    </Page>
   );
 }
 
