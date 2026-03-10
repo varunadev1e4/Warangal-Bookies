@@ -1265,6 +1265,12 @@ export default function App() {
   // Logged in but data still loading
   if (!dataLoaded) return <LoadingScreen message={"Welcome, " + user.name + "! Loading your book club…"} />;
 
+  // Log the full user object so we can see exactly what fields Supabase returned
+  console.log("APP RENDER — user object:", JSON.stringify(user));
+  console.log("APP RENDER — users[0]:", JSON.stringify(users[0]));
+  console.log("APP RENDER — books[0]:", JSON.stringify(books[0]));
+  console.log("APP RENDER — meetups[0]:", JSON.stringify(meetups[0]));
+
   // DEBUG SCREEN — shows raw Supabase data so we can see exactly what came back
   // Remove this block once the app is working
   if (window.__DEBUG_MODE__) return (
@@ -1296,6 +1302,7 @@ export default function App() {
   const configMissing = SUPABASE_URL.includes("YOUR_PROJECT_ID");
 
   const renderPage = () => {
+    console.log("renderPage called, page=", page, "users=", users.length, "books=", books.length, "user=", user);
     const props = { users, books, meetups, loans, loanRequests, currentUser: user, onRefresh: () => loadData(user), showToast };
     if (page === "dashboard") return <Dashboard {...props} setPage={setPage} />;
     if (page === "about") return <AboutPage users={users} />;
