@@ -476,10 +476,318 @@ function Sidebar({ user, page, setPage, onLogout, pendingCount = 0 }) {
   );
 }
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// READING CHALLENGE
+// ─────────────────────────────────────────────────────────────────────────────
+function ReadingChallenge({ user, loans, showToast, onRefresh }) {
+  const year = new Date().getFullYear();
+  const [challenge, setChallenge] = useState(null);
+  const [loadingChallenge, setLoadingChallenge] = useState(true);
+  const [showSetGoal, setShowSetGoal] = useState(false);
+  const [showAddBook, setShowAddBook] = useState(false);
+  const [goalInput, setGoalInput] = useState("12");
+  const [saving, setSaving] = useState(false);
+  const [newBook, setNewBook] = useState({ title: "", author: "", finished_date: new Date().toISOString().split("T")[0] });
+
+  useEffect(() => { fetchChallenge(); }, [user.id]);
+
+  async function fetchChallenge() {
+    setLoadingChallenge(true);
+    try {
+      const rows = await sb.select("reading_challenges", `?user_id=eq.${user.id}&year=eq.${year}`);
+      setChallenge(rows[0] || null);
+    } catch (e) { setChallenge(null); }
+    finally { setLoadingChallenge(false); }
+  }
+
+  async function setGoal() {
+    const g = parseInt(goalInput);
+    if (!g || g < 1 || g > 365) return showToast("Enter a goal between 1 and 365.", "error");
+    setSaving(true);
+    try {
+      if (challenge) {
+        await sb.update("reading_challenges", { id: challenge.id }, { goal: g });
+      } else {
+        await sb.insert("reading_challenges", { user_id: user.id, year, goal: g, books_read: [] });
+      }
+      await fetchChallenge();
+      setShowSetGoal(false);
+      showToast(`Reading goal set to ${g} books for ${year}! 🎯`);
+    } catch (e) { showToast("Error saving goal: " + e.message, "error"); }
+    finally { setSaving(false); }
+  }
+
+  async function addReadBook() {
+    if (!newBook.title.trim()) return showToast("Enter a book title.", "error");
+    setSaving(true);
+    try {
+      const updated = [...(challenge.books_read || []), {
+        id: Date.now(),
+        title: newBook.title.trim(),
+        author: newBook.author.trim(),
+        finished_date: newBook.finished_date,
+      }];
+      await sb.update("reading_challenges", { id: challenge.id }, { books_read: updated });
+      await fetchChallenge();
+      setNewBook({ title: "", author: "", finished_date: new Date().toISOString().split("T")[0] });
+      setShowAddBook(false);
+      showToast(`"${newBook.title.trim()}" marked as read! 📖`);
+    } catch (e) { showToast("Error: " + e.message, "error"); }
+    finally { setSaving(false); }
+  }
+
+  async function removeBook(bookId) {
+    try {
+      const updated = (challenge.books_read || []).filter(b => b.id !== bookId);
+      await sb.update("reading_challenges", { id: challenge.id }, { books_read: updated });
+      await fetchChallenge();
+      showToast("Book removed from challenge.");
+    } catch (e) { showToast("Error: " + e.message, "error"); }
+  }
+
+  if (loadingChallenge) return (
+    <div style={{ background: "#fff", border: "1px solid #e8ddd0", borderRadius: 14, padding: 24, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 120 }}>
+      <Spinner size={28} />
+    </div>
+  );
+
+  // No challenge set yet
+  if (!challenge) return (
+    <div style={{ background: "linear-gradient(135deg, #1a1008 0%, #2d1f0e 100%)", borderRadius: 14, padding: 28, color: "#fff", position: "relative", overflow: "hidden" }}>
+      <div style={{ position: "absolute", right: -20, top: -20, fontSize: 120, opacity: 0.06 }}>📚</div>
+      <div style={{ fontFamily: "Georgia, serif", fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
+        📖 {year} Reading Challenge
+      </div>
+      <div style={{ fontSize: 14, color: "rgba(255,255,255,0.65)", marginBottom: 20, lineHeight: 1.6 }}>
+        Set a reading goal for {year} and track every book you finish — just like Goodreads!
+      </div>
+      <Btn variant="gold" onClick={() => setShowSetGoal(true)}>Set My {year} Goal →</Btn>
+
+      {showSetGoal && (
+        <Modal title={`Set Your ${year} Reading Goal`} onClose={() => setShowSetGoal(false)}>
+          <div style={{ textAlign: "center", padding: "8px 0 20px" }}>
+            <div style={{ fontSize: 48 }}>🎯</div>
+            <div style={{ fontSize: 14, color: "#8b5e3c", marginTop: 8 }}>How many books do you want to read in {year}?</div>
+          </div>
+          <Field label="Number of Books">
+            <input type="number" min="1" max="365" style={{ ...iStyle, fontSize: 22, textAlign: "center", fontFamily: "Georgia, serif", fontWeight: 700 }}
+              value={goalInput} onChange={e => setGoalInput(e.target.value)} onKeyDown={e => e.key === "Enter" && setGoal()} />
+          </Field>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+            {[6, 12, 24, 36, 52].map(n => (
+              <button key={n} onClick={() => setGoalInput(String(n))} style={{
+                padding: "6px 14px", borderRadius: 20, border: `1.5px solid ${goalInput === String(n) ? "#c9883a" : "#e0d5c5"}`,
+                background: goalInput === String(n) ? "#c9883a" : "transparent",
+                color: goalInput === String(n) ? "#fff" : "#8b5e3c",
+                cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: "inherit"
+              }}>{n}</button>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+            <Btn variant="outline" onClick={() => setShowSetGoal(false)}>Cancel</Btn>
+            <Btn onClick={setGoal} disabled={saving}>{saving ? "Saving…" : "Set Goal 🎯"}</Btn>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+
+  const booksRead = challenge.books_read || [];
+  const goal = challenge.goal || 12;
+  const count = booksRead.length;
+  const pct = Math.min(100, Math.round((count / goal) * 100));
+  const remaining = Math.max(0, goal - count);
+  const dayOfYear = Math.ceil((new Date() - new Date(year, 0, 1)) / 86400000);
+  const daysInYear = (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)) ? 366 : 365;
+  const expectedByNow = Math.round((dayOfYear / daysInYear) * goal);
+  const ahead = count - expectedByNow;
+
+  const motivations = count === 0
+    ? "Start your first book today! 💪"
+    : count >= goal
+    ? `🏆 Goal smashed! You've read ${count} of ${goal} books!`
+    : ahead > 0
+    ? `You're ${ahead} book${ahead > 1 ? "s" : ""} ahead of pace! 🔥`
+    : ahead < 0
+    ? `${Math.abs(ahead)} book${Math.abs(ahead) > 1 ? "s" : ""} behind pace — you got this! 📖`
+    : "Right on track! Keep reading! ✨";
+
+  // Monthly breakdown
+  const monthlyCount = Array(12).fill(0);
+  booksRead.forEach(b => {
+    if (b.finished_date) {
+      const m = new Date(b.finished_date).getMonth();
+      if (!isNaN(m)) monthlyCount[m]++;
+    }
+  });
+  const maxMonth = Math.max(...monthlyCount, 1);
+  const monthNames = ["J","F","M","A","M","J","J","A","S","O","N","D"];
+
+  // SVG circle progress
+  const R = 44;
+  const C = 2 * Math.PI * R;
+  const dash = (pct / 100) * C;
+
+  return (
+    <div style={{ background: "#fff", border: "1px solid #e8ddd0", borderRadius: 14, padding: 22, gridColumn: "1 / -1" }}>
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18, flexWrap: "wrap", gap: 10 }}>
+        <div style={{ fontFamily: "Georgia, serif", fontSize: 17, fontWeight: 700, color: "#1a1008" }}>
+          📖 {year} Reading Challenge
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <Btn variant="outline" small onClick={() => setShowSetGoal(true)}>Edit Goal</Btn>
+          <Btn small onClick={() => setShowAddBook(true)}>+ Add Book</Btn>
+        </div>
+      </div>
+
+      {/* Main stats row */}
+      <div style={{ display: "flex", gap: 20, alignItems: "center", flexWrap: "wrap", marginBottom: 20 }}>
+
+        {/* SVG Progress Ring */}
+        <div style={{ position: "relative", flexShrink: 0 }}>
+          <svg width={110} height={110} viewBox="0 0 110 110">
+            <circle cx={55} cy={55} r={R} fill="none" stroke="#f0e8d8" strokeWidth={10} />
+            <circle cx={55} cy={55} r={R} fill="none" stroke={pct >= 100 ? "#22c55e" : "#c9883a"} strokeWidth={10}
+              strokeDasharray={`${dash} ${C}`} strokeDashoffset={C * 0.25} strokeLinecap="round"
+              style={{ transition: "stroke-dasharray 0.6s ease" }} />
+            <text x={55} y={50} textAnchor="middle" fontSize={22} fontWeight={700} fontFamily="Georgia, serif" fill="#1a1008">{count}</text>
+            <text x={55} y={66} textAnchor="middle" fontSize={11} fill="#8b5e3c">of {goal}</text>
+          </svg>
+          {pct >= 100 && (
+            <div style={{ position: "absolute", top: -6, right: -6, fontSize: 22 }}>🏆</div>
+          )}
+        </div>
+
+        {/* Stats */}
+        <div style={{ flex: 1, minWidth: 160 }}>
+          <div style={{ fontSize: 22, fontWeight: 700, fontFamily: "Georgia, serif", color: "#1a1008" }}>{pct}% complete</div>
+          <div style={{ fontSize: 13, color: "#8b5e3c", marginTop: 2, marginBottom: 10 }}>{motivations}</div>
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+            {[
+              { val: count, label: "Read" },
+              { val: remaining, label: "Remaining" },
+              { val: expectedByNow, label: "Expected" },
+            ].map(({ val, label }) => (
+              <div key={label}>
+                <div style={{ fontFamily: "Georgia, serif", fontSize: 18, fontWeight: 700, color: "#1a1008" }}>{val}</div>
+                <div style={{ fontSize: 11, color: "#8b5e3c", textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Monthly bar chart */}
+        <div style={{ flexShrink: 0 }}>
+          <div style={{ fontSize: 11, color: "#8b5e3c", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>Books per Month</div>
+          <div style={{ display: "flex", gap: 4, alignItems: "flex-end", height: 50 }}>
+            {monthlyCount.map((n, i) => (
+              <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+                <div style={{
+                  width: 16, height: n > 0 ? Math.max(6, Math.round((n / maxMonth) * 44)) : 4,
+                  background: n > 0 ? "#c9883a" : "#f0e8d8", borderRadius: 3,
+                  transition: "height 0.4s ease"
+                }} title={`${n} book${n !== 1 ? "s" : ""}`} />
+                <div style={{ fontSize: 9, color: "#8b5e3c" }}>{monthNames[i]}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div style={{ background: "#f0e8d8", borderRadius: 8, height: 8, marginBottom: 16, overflow: "hidden" }}>
+        <div style={{
+          height: 8, borderRadius: 8,
+          background: pct >= 100 ? "linear-gradient(90deg, #22c55e, #16a34a)" : "linear-gradient(90deg, #c9883a, #e6a84a)",
+          width: `${pct}%`, transition: "width 0.6s ease"
+        }} />
+      </div>
+
+      {/* Books list */}
+      {booksRead.length > 0 && (
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "#8b5e3c", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>
+            Books Read ({count})
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 8, maxHeight: 220, overflowY: "auto" }}>
+            {[...booksRead].reverse().map((b, i) => (
+              <div key={b.id} style={{ background: "#faf6ef", border: "1px solid #e8ddd0", borderRadius: 10, padding: "10px 12px", display: "flex", gap: 10, alignItems: "flex-start" }}>
+                <span style={{ fontSize: 18, flexShrink: 0 }}>
+                  {["📗","📘","📙","📕","📓","📔"][i % 6]}
+                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13, color: "#1a1008", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.title}</div>
+                  {b.author && <div style={{ fontSize: 12, color: "#8b5e3c" }}>{b.author}</div>}
+                  <div style={{ fontSize: 11, color: "#aaa", marginTop: 2 }}>{b.finished_date ? formatDate(b.finished_date) : ""}</div>
+                </div>
+                <button onClick={() => removeBook(b.id)} title="Remove" style={{ background: "none", border: "none", cursor: "pointer", color: "#ccc", fontSize: 14, padding: 0, lineHeight: 1, flexShrink: 0 }}>×</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Edit Goal Modal */}
+      {showSetGoal && (
+        <Modal title={`Update ${year} Reading Goal`} onClose={() => setShowSetGoal(false)}>
+          <div style={{ textAlign: "center", marginBottom: 16, fontSize: 13, color: "#8b5e3c" }}>
+            Current goal: <strong>{goal} books</strong>. Change it below.
+          </div>
+          <Field label="New Goal">
+            <input type="number" min="1" max="365" style={{ ...iStyle, fontSize: 22, textAlign: "center", fontFamily: "Georgia, serif", fontWeight: 700 }}
+              value={goalInput} onChange={e => setGoalInput(e.target.value)} onKeyDown={e => e.key === "Enter" && setGoal()} />
+          </Field>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+            {[6, 12, 24, 36, 52].map(n => (
+              <button key={n} onClick={() => setGoalInput(String(n))} style={{
+                padding: "6px 14px", borderRadius: 20, border: `1.5px solid ${goalInput === String(n) ? "#c9883a" : "#e0d5c5"}`,
+                background: goalInput === String(n) ? "#c9883a" : "transparent",
+                color: goalInput === String(n) ? "#fff" : "#8b5e3c",
+                cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: "inherit"
+              }}>{n}</button>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+            <Btn variant="outline" onClick={() => setShowSetGoal(false)}>Cancel</Btn>
+            <Btn onClick={setGoal} disabled={saving}>{saving ? "Saving…" : "Update Goal"}</Btn>
+          </div>
+        </Modal>
+      )}
+
+      {/* Add Book Modal */}
+      {showAddBook && (
+        <Modal title="Mark a Book as Read 📖" onClose={() => setShowAddBook(false)}>
+          <div style={{ background: "#faf6ef", border: "1px solid #e8ddd0", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#8b5e3c" }}>
+            Add any book you've finished — borrowed, owned, or from anywhere!
+          </div>
+          <Field label="Book Title *">
+            <input style={iStyle} value={newBook.title} placeholder="e.g. Atomic Habits"
+              onChange={e => setNewBook({ ...newBook, title: e.target.value })} />
+          </Field>
+          <Field label="Author">
+            <input style={iStyle} value={newBook.author} placeholder="e.g. James Clear"
+              onChange={e => setNewBook({ ...newBook, author: e.target.value })} />
+          </Field>
+          <Field label="Date Finished">
+            <input type="date" style={iStyle} value={newBook.finished_date}
+              onChange={e => setNewBook({ ...newBook, finished_date: e.target.value })} />
+          </Field>
+          <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+            <Btn variant="outline" onClick={() => setShowAddBook(false)}>Cancel</Btn>
+            <Btn onClick={addReadBook} disabled={saving}>{saving ? "Saving…" : "Mark as Read ✓"}</Btn>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // DASHBOARD
 // ─────────────────────────────────────────────────────────────────────────────
-function Dashboard({ user, books, meetups, loans, loanRequests, setPage, loading }) {
+function Dashboard({ user, books, meetups, loans, loanRequests, setPage, loading, showToast, onRefresh }) {
   if (!user) return null;
 
   const safeBooks = (books || []).filter(b => b && b.id);
@@ -591,6 +899,11 @@ function Dashboard({ user, books, meetups, loans, loanRequests, setPage, loading
               ))
           }
         </div>
+      </div>
+
+      {/* Reading Challenge */}
+      <div style={{ marginTop: 16 }}>
+        <ReadingChallenge user={user} loans={loans} showToast={showToast} onRefresh={onRefresh} />
       </div>
     </Page>
   );
